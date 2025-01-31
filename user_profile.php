@@ -127,7 +127,7 @@ if (isset($_POST['user-phone-number-btn'])) {
     $user_phone_number = $_POST['user_phone_number'];
     $update = "UPDATE users SET phone = '$user_phone_number' WHERE email = '$userEmail'";
     if(mysqli_query($connection, $update)) {
-        // Query the user's nationality from the database after the update
+        // Query the user's phone number from the database after the update
         $result = mysqli_query($connection, "SELECT phone FROM users WHERE email = '$userEmail'");
         if ($row = mysqli_fetch_assoc($result)) {
             $user_phone_number = $row['phone'];
@@ -143,24 +143,125 @@ if (isset($_SESSION['user_phone_number'])) {
 }
 
 // user address
+if (!isset($_SESSION['user_address'])) {
+    $result = mysqli_query($connection, "SELECT address FROM users WHERE email = '$userEmail'");
+    if ($row = mysqli_fetch_assoc($result)) {
+        $_SESSION['user_address'] = $row['address'];
+    }
+}
+
+// Update user's address when form is submitted
 if (isset($_POST['user-address-btn'])) {
-    $user_address = $_POST['user_address'];
+    $user_address = mysqli_real_escape_string($connection, $_POST['user_address']);
     $update = "UPDATE users SET address = '$user_address' WHERE email = '$userEmail'";
     if(mysqli_query($connection, $update)) {
-        // Query the user's nationality from the database after the update
-        $result = mysqli_query($connection, "SELECT address FROM users WHERE email = '$userEmail'");
+        $_SESSION['user_address'] = $user_address;
+    }
+}
+
+// Assign address to variable for use in HTML
+$user_address = $_SESSION['user_address'] ?? '';
+
+// user about
+if (isset($_POST['user-about-btn'])) {
+    $user_about = $_POST['user_about'];
+    $update = "UPDATE users SET about = '$user_about' WHERE email = '$userEmail'";
+    if(mysqli_query($connection, $update)) {
+        // Query the user's about from the database after the update
+        $result = mysqli_query($connection, "SELECT about FROM users WHERE email = '$userEmail'");
         if ($row = mysqli_fetch_assoc($result)) {
-            $user_address = $row['address'];
-            $_SESSION['user_address'] = $user_address;
+            $user_about = $row['about'];
+            $_SESSION['user_about'] = $user_about;
         }
     }
 }
 
-if (isset($_SESSION['user_address'])) {
-    $user_address = $_SESSION['user_address'];
+if (isset($_SESSION['user_about'])) {
+    $user_about = $_SESSION['user_about'];
 } else {
-    $user_address = "";
+    $user_about = "";
 }
+
+// user blood group
+if (isset($_POST['user-blood-group-btn'])) {
+    $user_blood_group = $_POST['user_blood_group'];
+    $update = "UPDATE users SET blood = '$user_blood_group' WHERE email = '$userEmail'";
+    if(mysqli_query($connection, $update)) {
+        // Query the user's blood group from the database after the update
+        $result = mysqli_query($connection, "SELECT blood FROM users WHERE email = '$userEmail'");
+        if ($row = mysqli_fetch_assoc($result)) {
+            $user_blood_group = $row['blood'];
+            $_SESSION['user_blood_group'] = $user_blood_group;
+        }
+    }
+}
+
+if (isset($_SESSION['user_blood_group'])) {
+    $user_blood_group = $_SESSION['user_blood_group'];
+} else {
+    $user_blood_group = "";
+}
+
+// user weight
+if (isset($_POST['user-weight-btn'])) {
+    $user_weight = $_POST['user_weight'];
+    $update = "UPDATE users SET weight = '$user_weight' WHERE email = '$userEmail'";
+    if(mysqli_query($connection, $update)) {
+        // Query the user's weight from the database after the update
+        $result = mysqli_query($connection, "SELECT weight FROM users WHERE email = '$userEmail'");
+        if ($row = mysqli_fetch_assoc($result)) {
+            $user_weight = $row['weight'];
+            $_SESSION['user_weight'] = $user_weight;
+        }
+    }
+}
+
+if (isset($_SESSION['user_weight'])) {
+    $user_weight = $_SESSION['user_weight'];
+} else {
+    $user_weight = "";
+}
+
+// user height
+if (isset($_POST['user-height-btn'])) {
+    $user_height = $_POST['user_height'];
+    $update = "UPDATE users SET height = '$user_height' WHERE email = '$userEmail'";
+    if(mysqli_query($connection, $update)) {
+        // Query the user's height from the database after the update
+        $result = mysqli_query($connection, "SELECT height FROM users WHERE email = '$userEmail'");
+        if ($row = mysqli_fetch_assoc($result)) {
+            $user_height = $row['height'];
+            $_SESSION['user_height'] = $user_height;
+        }
+    }
+}
+
+if (isset($_SESSION['user_height'])) {
+    $user_height = $_SESSION['user_height'];
+} else {
+    $user_height = "";
+}
+
+// user medical history
+if (!isset($_SESSION['user_medical_history'])) {
+    $result = mysqli_query($connection, "SELECT history FROM users WHERE email = '$userEmail'");
+    if ($row = mysqli_fetch_assoc($result)) {
+        $_SESSION['user_medical_history'] = $row['history'];
+    }
+}
+
+// Update user's medical history when form is submitted
+if (isset($_POST['user-medical-history-btn'])) {
+    $user_medical_history = mysqli_real_escape_string($connection, $_POST['user_medical_history']);
+    $update = "UPDATE users SET history = '$user_medical_history' WHERE email = '$userEmail'";
+    if(mysqli_query($connection, $update)) {
+        $_SESSION['user_medical_history'] = $user_medical_history;
+    }
+}
+
+// Assign address to variable for use in HTML
+$user_medical_history = $_SESSION['user_medical_history'] ?? '';
+
 
  ?>
 <!DOCTYPE html>
@@ -683,18 +784,28 @@ if (isset($_SESSION['user_address'])) {
           <div>
             <h2 style="color: white;">Address</h2>
           </div>
-          <form style="display: flex; gap: 1em;" method="post">
-            <input class="user-address-input" type="text" name="user_address" style="width: 250px; height: 30px; padding: 5px; font-family: Lora; outline: none; border: none; border-radius: 5px;">
-            <button style="background-color: #6499E9; width: 70px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 1px 1px black;" type="submit" name="user-address-btn">Add</button>
-          </form>
-          <h3 style="position: absolute; margin-top: 49px; margin-left: 10px;"><?php echo $user_address; ?></h3>
+          <?php if (!empty($user_address)): ?>
+              <!-- Show button if address exists -->
+          <button id="showAddressBtn" style="background-color: #6499E9; width: 130px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 1px 1px black;" onclick="showAddressPopup()">Your Address</button>
+          <?php else: ?>
+              <!-- Show input field if no address exists -->
+              <form style="display: flex; gap: 1em;" method="post">
+                  <input class="user-address-input" type="text" name="user_address" style="width: 250px; height: 30px; padding: 5px; font-family: Lora; outline: none; border: none; border-radius: 5px;">
+                  <button style="background-color: #6499E9; width: 70px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 1px 1px black;" type="submit" name="user-address-btn">Add</button>
+              </form>
+          <?php endif; ?>
           </div>
+        <div id="overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 999;"></div>
+        <div id="addressPopup" style="text-align: center; display: none; position: fixed; width: 300px; height: 300px; padding: 10px; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #fff; padding: 20px; border-radius: 5px; box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2); z-index: 1000;">
+          <h2>Your Address</h2>
+          <p style="padding-top: 10px;" id="addressContent"><?php echo htmlspecialchars($user_address); ?></p>
+          <button style="padding: 10px; margin-top: 20px; border: none; background-color: #60a159; color: white; border-radius: 5px; cursor: pointer;" onclick="closeAddressPopup()">Close</button>
+        </div>
         <form class="contact-details-about" style="display: flex; flex-direction: column; gap: 1em;" method="post">
           <h2 style="color: white;">About</h2>
           <textarea class="user-about-input" type="text" name="user_about" style="width: 330px; height: 60px; resize: none; padding: 5px; font-family: Lora; outline: none; border: none; border-radius: 5px;" placeholder="Write a little bit about yourself"></textarea>
           <button style="margin: auto; background-color: #6499E9; width: 70px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 1px 1px black;" type="submit" name="user-about-btn">Add</button>
         </form>
-        <h3 style="position: absolute; margin-top: 49px; margin-left: 10px;"><?php echo $user_about; ?></h3>
       </div>
       <div class="contact-details-2">
         <div class="contact-details-blood-group">
@@ -721,27 +832,41 @@ if (isset($_SESSION['user_address'])) {
           <div>
             <h2 style="color: white;">Weight (kg)</h2>
           </div>
-          <div style="display: flex; gap: 1em;">
+          <form style="display: flex; gap: 1em;" method="post">
             <input class="user-weight-input" type="number" name="user_weight" style="width: 150px; height: 30px; padding: 5px; font-family: Lora; outline: none; border: none; border-radius: 5px;">
             <button style="background-color: #6499E9; width: 70px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 1px 1px black;" type="submit" name="user-weight-btn">Add</button>
-          </div>
+          </form>
+          <h3 style="position: absolute; margin-top: 49px; margin-left: 10px;"><?php echo $user_weight; ?></h3>
         </div>
         <div class="contact-details-height">
           <div>
             <h2 style="color: white;">Height (cm)</h2>
           </div>
-          <div style="display: flex; gap: 1em;">
+          <form style="display: flex; gap: 1em;" method="post">
             <input class="user-height-input" type="number" name="user_height" style="width: 150px; height: 30px; padding: 5px; font-family: Lora; outline: none; border: none; border-radius: 5px;">
             <button style="background-color: #6499E9; width: 70px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 1px 1px black;" type="submit" name="user-height-btn">Add</button>
-          </div>
+          </form>
+          <h3 style="position: absolute; margin-top: 49px; margin-left: 10px;"><?php echo $user_height; ?></h3>
         </div>
         <div class="contact-details-medical-history">
           <div>
             <h2 style="color: white;">Medical History</h2>
           </div>
-          <div style="display: flex; gap: 1em;">
-            <input class="user-medical-history-input" type="text" name="user_medical_history" style="width: 230px; height: 30px; padding: 5px; font-family: Lora; outline: none; border: none; border-radius: 5px;">
-            <button style="background-color: #6499E9; width: 70px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 1px 1px black;" type="submit" name="user-medical-history-btn">Add</button>
+          <?php if (!empty($user_medical_history)): ?>
+              <!-- Show button if medical history exists -->
+          <button id="showMedicalHistoryBtn" style="background-color: #6499E9; width: 150px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 1px 1px black;" onclick="showMedicalHistoryPopup()">Your Medical History</button>
+          <?php else: ?>
+              <!-- Show input field if no medical history exists -->
+              <form style="display: flex; gap: 1em;" method="post">
+                  <input class="user-medical-history-input" type="text" name="user_medical_history" style="width: 250px; height: 30px; padding: 5px; font-family: Lora; outline: none; border: none; border-radius: 5px;">
+                  <button style="background-color: #6499E9; width: 70px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 1px 1px black;" type="submit" name="user-medical-history-btn">Add</button>
+              </form>
+          <?php endif; ?>
+          <div id="overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 999;"></div>
+          <div id="medicalHistoryPopup" style="text-align: center; display: none; width: 300px; height: 300px; padding: 10px; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #fff; padding: 20px; border-radius: 5px; box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2); z-index: 1000;">
+            <h2>Medical History</h2>
+            <p style="padding-top: 10px;" id="medicalHistoryContent"><?php echo htmlspecialchars($user_medical_history); ?></p>
+            <button style="padding: 10px; margin-top: 20px; border: none; background-color: #60a159; color: white; border-radius: 5px; cursor: pointer;" onclick="closeMedicalHistoryPopup()">Close</button>
           </div>
         </div>
       </div>
@@ -974,6 +1099,25 @@ if (isset($_SESSION['user_address'])) {
     document.getElementById('help-and-more').style.display = 'inline';
   });
 
+    function showAddressPopup() {
+        document.getElementById('overlay').style.display = 'block';
+        document.getElementById('addressPopup').style.display = 'block';
+    }
+
+    function closeAddressPopup() {
+        document.getElementById('overlay').style.display = 'none';
+        document.getElementById('addressPopup').style.display = 'none';
+    }
+
+    function showMedicalHistoryPopup() {
+        document.getElementById('overlay').style.display = 'block';
+        document.getElementById('medicalHistoryPopup').style.display = 'block';
+    }
+
+    function closeMedicalHistoryPopup() {
+        document.getElementById('medicalHistoryPopup').style.display = 'none';
+        document.getElementById('overlay').style.display = 'none';
+    }
   </script>
 
   <script defer src="https://use.fontawesome.com/releases/v6.4.0/js/all.js"></script>
