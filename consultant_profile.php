@@ -134,6 +134,34 @@ if (isset($_SESSION['cs_phone_number'])) {
     $cs_phone_number = "";
 }
 
+// consultant services
+if (!isset($_SESSION['cs_services'])) {
+    $result = mysqli_query($connection, "SELECT services FROM users WHERE email = '$csEmail'");
+    if ($row = mysqli_fetch_assoc($result)) {
+        $_SESSION['cs_services'] = $row['services'];
+    }
+}
+
+// Update consultant's services when form is submitted
+if (isset($_POST['consultant-services-btn'])) {
+    if (isset($_POST['consultant_services']) && is_array($_POST['consultant_services'])) {
+        // Convert the array into a comma-separated string
+        $cs_services = implode(", ", $_POST['consultant_services']);
+
+        // Escape the string to prevent SQL injection
+        $cs_services = mysqli_real_escape_string($connection, $cs_services);
+
+        // Update the database
+        $update = "UPDATE users SET services = '$cs_services' WHERE email = '$csEmail'";
+        if(mysqli_query($connection, $update)) {
+            $_SESSION['cs_services'] = $cs_services;
+        }
+    }
+}
+
+// Assign services to a variable for use in HTML
+$cs_services = $_SESSION['cs_services'] ?? '';
+
  ?>
  <!DOCTYPE html>
  <html lang="en" dir="ltr">
@@ -663,110 +691,179 @@ if (isset($_SESSION['cs_phone_number'])) {
            <div>
              <h2 style="color: white;">Services</h2>
            </div>
-           <div style="display: flex; gap: 1em;">
-            <select class="user-address-input" type="text" name="consultant_services[]" multiple style="width: 250px; height: 40px; padding: 5px; font-family: Lora; outline: none; border: none; border-radius: 5px;">
-              <option value="general_checkup">General Check-Up</option>
-              <option value="flu_shot">Flu Shot Administration</option>
-              <option value="bp_screening">Blood Pressure Screening</option>
-              <option value="cholesterol_screening">Cholesterol Screening</option>
-              <option value="diabetes_screening">Diabetes Screening</option>
-              <option value="heart_health">Heart Health Counseling</option>
-              <option value="weight_mgmt">Weight Management Program</option>
-              <option value="nutrition_diet">Nutrition &amp; Diet Consultation</option>
-              <option value="stress_mgmt">Stress Management Session</option>
-              <option value="sleep_hygiene">Sleep Hygiene Counseling</option>
-              <option value="smoking_cessation">Smoking Cessation Assistance</option>
-              <option value="allergy_testing">Allergy Testing &amp; Advice</option>
-              <option value="immun_updates">Immunization Updates (Tetanus, MMR)</option>
-              <option value="women_health">Women’s Health Consultation</option>
-              <option value="men_health">Men’s Health Consultation</option>
-              <option value="pediatric_wellness">Pediatric Wellness Check</option>
-              <option value="adolescent_health">Adolescent Health Counseling</option>
-              <option value="family_planning">Family Planning Advice</option>
-              <option value="travel_vaccinations">Travel Health &amp; Vaccinations</option>
-              <option value="routine_blood_work">Routine Blood Work Ordering</option>
-              <option value="thyroid_counseling">Thyroid Function Test &amp; Counseling</option>
-              <option value="vision_screening">Vision Screening</option>
-              <option value="hearing_screening">Hearing Screening</option>
-              <option value="minor_ailments">Minor Ailments (Cold, Cough, Fever)</option>
-              <option value="migraine_management">Migraine &amp; Headache Management</option>
-              <option value="asthma_ed">Asthma Management &amp; Education</option>
-              <option value="ecg_counseling">ECG Interpretation &amp; Counseling</option>
-              <option value="wound_care">Basic Wound Care &amp; Dressing</option>
-              <option value="pain_consult">Pain Management Consultation</option>
-              <option value="preop_evaluation">Pre-Operative Evaluation</option>
-              <option value="postop_followup">Post-Operative Follow-Up</option>
-              <option value="chronic_hypertension">Chronic Disease Management (Hypertension)</option>
-              <option value="medication_review">Medication Refill &amp; Review</option>
-              <option value="lab_interpretation">Lab Result Interpretation</option>
-              <option value="referral_coordination">Referral Coordination (Specialist &amp; Hospital)</option>
-              <option value="mental_health_screen">Mental Health Screening (Depression, Anxiety)</option>
-              <option value="stress_ekg">Stress EKG Coordination</option>
-              <option value="spirometry_pft">Spirometry &amp; Pulmonary Function Tests</option>
-              <option value="weightloss_support">Weight-Loss Counseling &amp; Support</option>
-              <option value="otc_advice">Over-The-Counter Medication Advice</option>
-              <option value="seasonal_allergy">Seasonal Allergy Management</option>
-              <option value="skin_derma_referral">Skin Rash &amp; Dermatological Referral</option>
-              <option value="lifestyle_mod">Lifestyle Modification Guidance</option>
-              <option value="bone_density">Bone Density Screening Coordination</option>
-              <option value="joint_arthritis">Joint Pain &amp; Arthritis Counseling</option>
-              <option value="acid_reflux">Heartburn &amp; Acid Reflux Management</option>
-              <option value="tobacco_assessment">Smoking &amp; Tobacco Use Assessment</option>
-              <option value="alcohol_screening">Alcohol Use &amp; Dependency Screening</option>
-              <option value="supplements_advice">Nutritional Supplements &amp; Vitamins Advice</option>
-              <option value="vitamin_d_screening">Vitamin D Level Screening</option>
-              <option value="minor_emergency">Minor Emergency Assessment</option>
-              <option value="imaging_referral">Referral for Imaging (X-Ray, Ultrasound, MRI)</option>
-              <option value="breast_exam">Breast Exam &amp; Self-Exam Education</option>
-              <option value="prostate_ed">Prostate Health Education</option>
-              <option value="menopause_mgmt">Menopause Symptom Management</option>
-              <option value="pediatric_vaccine">Pediatric Vaccination Coordination</option>
-              <option value="teen_health_edu">Teenage Health Education (Puberty &amp; Growth)</option>
-              <option value="geriatric_care">Geriatric Care Planning</option>
-              <option value="dementia_screen">Dementia &amp; Alzheimer’s Early Screening</option>
-              <option value="home_hospice">Home Care &amp; Hospice Coordination</option>
-              <option value="copd_mgmt">Chronic Obstructive Pulmonary Disease (COPD) Management</option>
-              <option value="basic_suturing">Basic Suturing &amp; Stitch Removal</option>
-              <option value="sore_throat_strep">Sore Throat &amp; Strep Testing Coordination</option>
-              <option value="uti_screening">Urinary Tract Infection Screening</option>
-              <option value="kidney_function">Kidney Function Test Coordination</option>
-              <option value="foot_care">Foot Care Advice (Diabetic Foot Check)</option>
-              <option value="cardio_risk">Cardiovascular Risk Assessment</option>
-              <option value="flu_consult">Seasonal Flu Consultation</option>
-              <option value="ear_syringing">Ear Syringing &amp; Wax Removal Coordination</option>
-              <option value="blood_sugar_edu">Blood Sugar Monitoring Education</option>
-              <option value="blood_donation_coord">Blood Donation Guidance &amp; Coordination</option>
-              <option value="prenatal_vitamins">Prenatal Vitamins Advice</option>
-              <option value="domestic_abuse">Domestic Violence &amp; Abuse Screening</option>
-              <option value="sexual_health">Sexual Health Counseling &amp; STI Screening Coordination</option>
-              <option value="blood_rh_typing">Blood Group &amp; Rh Typing Coordination</option>
-              <option value="thyroid_ultrasound">Thyroid Ultrasound Referral &amp; Follow-Up</option>
-              <option value="sprains_strains">Minor Sprains &amp; Strains Assessment</option>
-              <option value="anxiety_stress_relief">Anxiety &amp; Stress Relief Techniques</option>
-              <option value="injection_admin">Injection Administration (Vitamin B12)</option>
-              <option value="tb_screen_referral">Tuberculosis Screening &amp; Referral</option>
-              <option value="postnatal_check">Postnatal Health Check Coordination</option>
-              <option value="obesity_screening">Overweight &amp; Obesity Screening (BMI)</option>
-              <option value="office_procedure_coord">Office Procedure Coordination (ECG, Nebulization)</option>
-              <option value="migraine_trigger">Migraine Trigger Identification &amp; Management</option>
-              <option value="breastfeeding_support">Breastfeeding Support &amp; Guidance</option>
-              <option value="child_development">Child Development Milestones Counseling</option>
-              <option value="postpartum_depression">Postpartum Depression Screening</option>
-              <option value="cardio_fitness_test">Cardiovascular Fitness Testing Coordination</option>
-              <option value="oral_health_referral">Oral Health Referral &amp; Basic Examination</option>
-              <option value="patient_education">Patient Education Seminars &amp; Workshops</option>
-              <option value="school_forms">School Health Forms &amp; Physicals</option>
-              <option value="fitness_to_work">Fitness-to-Work Assessments</option>
-              <option value="blood_donation_elig">Blood Donation Eligibility Assessment</option>
-              <option value="family_counsel_referral">Family Counseling &amp; Conflict Resolution Referral</option>
-              <option value="mind_body_wellness">Mind-Body Wellness &amp; Meditation Techniques</option>
-              <option value="rehab_coord">Coordinating Rehab Services (Physical Therapy)</option>
-              <option value="adolescent_mental_referral">Adolescent Mental Health Support &amp; Referral</option>
-              <option value="dyslipidemia_mgmt">Dyslipidemia Management &amp; Advice</option>
-              <option value="pap_smear_coord">Pap Smear Coordination</option>
-              <option value="community_outreach">Community Health Outreach &amp; Education</option>
-             </select>
-             <button style="background-color: #6499E9; width: 70px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 1px 1px black;" type="submit" name="consultant-services-btn">Add</button>
+           <?php if (!empty($cs_services)): ?>
+               <!-- Show button if services exist -->
+               <button id="showServicesPopupBtn" style="background-color: #6499E9; width: 130px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 1px 1px black;" onclick="showServicesPopup()">Services</button>
+           <?php else: ?>
+               <!-- Show input field if no services exist -->
+               <form style="display: flex; gap: 1em;" method="post">
+                   <select class="user-address-input" type="text" name="consultant_services[]" multiple style="width: 250px; height: 40px; padding: 5px; font-family: Lora; outline: none; border: none; border-radius: 5px;">
+                      <option value="general_checkup">General Check-Up</option>
+                      <option value="flu_shot">Flu Shot Administration</option>
+                      <option value="bp_screening">Blood Pressure Screening</option>
+                      <option value="cholesterol_screening">Cholesterol Screening</option>
+                      <option value="diabetes_screening">Diabetes Screening</option>
+                      <option value="heart_health">Heart Health Counseling</option>
+                      <option value="weight_mgmt">Weight Management Program</option>
+                      <option value="nutrition_diet">Nutrition &amp; Diet Consultation</option>
+                      <option value="stress_mgmt">Stress Management Session</option>
+                      <option value="sleep_hygiene">Sleep Hygiene Counseling</option>
+                      <option value="smoking_cessation">Smoking Cessation Assistance</option>
+                      <option value="allergy_testing">Allergy Testing &amp; Advice</option>
+                      <option value="immun_updates">Immunization Updates (Tetanus, MMR)</option>
+                      <option value="women_health">Women’s Health Consultation</option>
+                      <option value="men_health">Men’s Health Consultation</option>
+                      <option value="pediatric_wellness">Pediatric Wellness Check</option>
+                      <option value="adolescent_health">Adolescent Health Counseling</option>
+                      <option value="family_planning">Family Planning Advice</option>
+                      <option value="travel_vaccinations">Travel Health &amp; Vaccinations</option>
+                      <option value="routine_blood_work">Routine Blood Work Ordering</option>
+                      <option value="thyroid_counseling">Thyroid Function Test &amp; Counseling</option>
+                      <option value="vision_screening">Vision Screening</option>
+                      <option value="hearing_screening">Hearing Screening</option>
+                      <option value="minor_ailments">Minor Ailments (Cold, Cough, Fever)</option>
+                      <option value="migraine_management">Migraine &amp; Headache Management</option>
+                      <option value="asthma_ed">Asthma Management &amp; Education</option>
+                      <option value="ecg_counseling">ECG Interpretation &amp; Counseling</option>
+                      <option value="wound_care">Basic Wound Care &amp; Dressing</option>
+                      <option value="pain_consult">Pain Management Consultation</option>
+                      <option value="preop_evaluation">Pre-Operative Evaluation</option>
+                      <option value="postop_followup">Post-Operative Follow-Up</option>
+                      <option value="chronic_hypertension">Chronic Disease Management (Hypertension)</option>
+                      <option value="medication_review">Medication Refill &amp; Review</option>
+                      <option value="lab_interpretation">Lab Result Interpretation</option>
+                      <option value="referral_coordination">Referral Coordination (Specialist &amp; Hospital)</option>
+                      <option value="mental_health_screen">Mental Health Screening (Depression, Anxiety)</option>
+                      <option value="stress_ekg">Stress EKG Coordination</option>
+                      <option value="spirometry_pft">Spirometry &amp; Pulmonary Function Tests</option>
+                      <option value="weightloss_support">Weight-Loss Counseling &amp; Support</option>
+                      <option value="otc_advice">Over-The-Counter Medication Advice</option>
+                      <option value="seasonal_allergy">Seasonal Allergy Management</option>
+                      <option value="skin_derma_referral">Skin Rash &amp; Dermatological Referral</option>
+                      <option value="lifestyle_mod">Lifestyle Modification Guidance</option>
+                      <option value="bone_density">Bone Density Screening Coordination</option>
+                      <option value="joint_arthritis">Joint Pain &amp; Arthritis Counseling</option>
+                      <option value="acid_reflux">Heartburn &amp; Acid Reflux Management</option>
+                      <option value="tobacco_assessment">Smoking &amp; Tobacco Use Assessment</option>
+                      <option value="alcohol_screening">Alcohol Use &amp; Dependency Screening</option>
+                      <option value="supplements_advice">Nutritional Supplements &amp; Vitamins Advice</option>
+                      <option value="vitamin_d_screening">Vitamin D Level Screening</option>
+                      <option value="minor_emergency">Minor Emergency Assessment</option>
+                      <option value="imaging_referral">Referral for Imaging (X-Ray, Ultrasound, MRI)</option>
+                      <option value="breast_exam">Breast Exam &amp; Self-Exam Education</option>
+                      <option value="prostate_ed">Prostate Health Education</option>
+                      <option value="menopause_mgmt">Menopause Symptom Management</option>
+                      <option value="pediatric_vaccine">Pediatric Vaccination Coordination</option>
+                      <option value="teen_health_edu">Teenage Health Education (Puberty &amp; Growth)</option>
+                      <option value="geriatric_care">Geriatric Care Planning</option>
+                      <option value="dementia_screen">Dementia &amp; Alzheimer’s Early Screening</option>
+                      <option value="home_hospice">Home Care &amp; Hospice Coordination</option>
+                      <option value="copd_mgmt">Chronic Obstructive Pulmonary Disease (COPD) Management</option>
+                      <option value="basic_suturing">Basic Suturing &amp; Stitch Removal</option>
+                      <option value="sore_throat_strep">Sore Throat &amp; Strep Testing Coordination</option>
+                      <option value="uti_screening">Urinary Tract Infection Screening</option>
+                      <option value="kidney_function">Kidney Function Test Coordination</option>
+                      <option value="foot_care">Foot Care Advice (Diabetic Foot Check)</option>
+                      <option value="cardio_risk">Cardiovascular Risk Assessment</option>
+                      <option value="flu_consult">Seasonal Flu Consultation</option>
+                      <option value="ear_syringing">Ear Syringing &amp; Wax Removal Coordination</option>
+                      <option value="blood_sugar_edu">Blood Sugar Monitoring Education</option>
+                      <option value="blood_donation_coord">Blood Donation Guidance &amp; Coordination</option>
+                      <option value="prenatal_vitamins">Prenatal Vitamins Advice</option>
+                      <option value="domestic_abuse">Domestic Violence &amp; Abuse Screening</option>
+                      <option value="sexual_health">Sexual Health Counseling &amp; STI Screening Coordination</option>
+                      <option value="blood_rh_typing">Blood Group &amp; Rh Typing Coordination</option>
+                      <option value="thyroid_ultrasound">Thyroid Ultrasound Referral &amp; Follow-Up</option>
+                      <option value="sprains_strains">Minor Sprains &amp; Strains Assessment</option>
+                      <option value="anxiety_stress_relief">Anxiety &amp; Stress Relief Techniques</option>
+                      <option value="injection_admin">Injection Administration (Vitamin B12)</option>
+                      <option value="tb_screen_referral">Tuberculosis Screening &amp; Referral</option>
+                      <option value="postnatal_check">Postnatal Health Check Coordination</option>
+                      <option value="obesity_screening">Overweight &amp; Obesity Screening (BMI)</option>
+                      <option value="office_procedure_coord">Office Procedure Coordination (ECG, Nebulization)</option>
+                      <option value="migraine_trigger">Migraine Trigger Identification &amp; Management</option>
+                      <option value="breastfeeding_support">Breastfeeding Support &amp; Guidance</option>
+                      <option value="child_development">Child Development Milestones Counseling</option>
+                      <option value="postpartum_depression">Postpartum Depression Screening</option>
+                      <option value="cardio_fitness_test">Cardiovascular Fitness Testing Coordination</option>
+                      <option value="oral_health_referral">Oral Health Referral &amp; Basic Examination</option>
+                      <option value="patient_education">Patient Education Seminars &amp; Workshops</option>
+                      <option value="school_forms">School Health Forms &amp; Physicals</option>
+                      <option value="fitness_to_work">Fitness-to-Work Assessments</option>
+                      <option value="blood_donation_elig">Blood Donation Eligibility Assessment</option>
+                      <option value="family_counsel_referral">Family Counseling &amp; Conflict Resolution Referral</option>
+                      <option value="mind_body_wellness">Mind-Body Wellness &amp; Meditation Techniques</option>
+                      <option value="rehab_coord">Coordinating Rehab Services (Physical Therapy)</option>
+                      <option value="adolescent_mental_referral">Adolescent Mental Health Support &amp; Referral</option>
+                      <option value="dyslipidemia_mgmt">Dyslipidemia Management &amp; Advice</option>
+                      <option value="pap_smear_coord">Pap Smear Coordination</option>
+                      <option value="community_outreach">Community Health Outreach &amp; Education</option>
+                   </select>
+                   <button style="background-color: #6499E9; width: 70px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 1px 1px black;" type="submit" name="consultant-services-btn">Add</button>
+               </form>
+           <?php endif; ?>
+
+           <!-- Popup Overlay -->
+           <div id="servicesOverlay"
+                style="display: none;
+                       position: fixed;
+                       top: 0;
+                       left: 0;
+                       width: 100%;
+                       height: 100%;
+                       background: rgba(0, 0, 0, 0.5);
+                       z-index: 999;">
+           </div>
+
+           <!-- Popup Container -->
+           <div id="servicesPopup"
+                style="display: none;
+                       position: fixed;
+                       top: 50%;
+                       left: 50%;
+                       transform: translate(-50%, -50%);
+                       background: #fff;
+                       width: 400px;
+                       padding: 30px;
+                       border-radius: 8px;
+                       box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+                       z-index: 1000;
+                       text-align: center;
+                       font-family: Lora;">
+               <h2 style="font-size: 24px; color: #333; margin-bottom: 20px;">Your Services</h2>
+               <p id="servicesContent"
+                  style="font-size: 18px;
+                         color: black;
+                         line-height: 1.5;
+                         max-width: 100%;
+                         word-wrap: break-word;">
+                   <?php
+                   if (!empty($cs_services)) {
+                    // Convert string to array
+                    $services_array = explode(", ", $cs_services);
+
+                    // Convert each service to a readable format
+                    $formatted_services = array_map(function($service) {
+                        return ucwords(str_replace("_", " ", $service));
+                    }, $services_array);
+
+                    // Join the formatted services back into a string
+                    echo htmlspecialchars(implode(", ", $formatted_services));
+                      } else {
+                    echo "No services selected.";
+                      }
+                   ?>
+               </p>
+               <button style="padding: 12px 20px;
+                              margin-top: 20px;
+                              border: none;
+                              background-color: #60a159;
+                              font-size: 16px;
+                              color: white;
+                              border-radius: 5px;
+                              cursor: pointer;
+                              box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);"
+                       onclick="closeServicesPopup()">Close</button>
            </div>
            </div>
          <div class="contact-details-about" style="display: flex; flex-direction: column; gap: 1em;">
@@ -780,41 +877,41 @@ if (isset($_SESSION['cs_phone_number'])) {
            <div>
              <h2 style="color: white;">Offline Availability</h2>
            </div>
-           <div style="display: flex; gap: 1em;">
+           <form style="display: flex; gap: 1em;" method="post">
              <select name="consultant_availability" id="offline_availability" style="font-family: Lora; font-size: 15px; width: 150px; border-radius: 5px; outline: none;">
                <option value="blank"></option>
                <option value="Yes">Yes</option>
                <option value="No">No</option>
              </select>
-             <button style="background-color: #6499E9; width: 70px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 1px 1px black;" type="button" name="consultant-availability">Add</button>
-           </div>
+             <button style="background-color: #6499E9; width: 70px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 1px 1px black;" type="submit" name="consultant-availability">Add</button>
+           </form>
          </div>
          <div class="contact-details-weight">
            <div>
              <h2 style="color: white;">City/Locality</h2>
            </div>
-           <div style="display: flex; gap: 1em;">
+           <form style="display: flex; gap: 1em;" method="post">
              <input class="user-weight-input" type="number" name="consultant_locality" style="width: 230px; height: 30px; padding: 5px; font-family: Lora; outline: none; border: none; border-radius: 5px;">
-             <button style="background-color: #6499E9; width: 70px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 1px 1px black;" type="button" name="consultant-locality-btn">Add</button>
-           </div>
+             <button style="background-color: #6499E9; width: 70px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 1px 1px black;" type="submit" name="consultant-locality-btn">Add</button>
+           </form>
          </div>
          <div class="contact-details-height">
            <div>
              <h2 style="color: white;">Hospital</h2>
            </div>
-           <div style="display: flex; gap: 1em;">
+           <form style="display: flex; gap: 1em;" method="post">
              <input class="user-height-input" type="number" name="consultant_hospital" style="width: 230px; height: 30px; padding: 5px; font-family: Lora; outline: none; border: none; border-radius: 5px;">
-             <button style="background-color: #6499E9; width: 70px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 1px 1px black;" type="button" name="consultant-hospital-btn">Add</button>
-           </div>
+             <button style="background-color: #6499E9; width: 70px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 1px 1px black;" type="submit" name="consultant-hospital-btn">Add</button>
+           </form>
          </div>
          <div class="contact-details-medical-history">
            <div>
              <h2 style="color: white;">Education</h2>
            </div>
-           <div style="display: flex; gap: 1em;">
+           <form style="display: flex; gap: 1em;" method="post">
              <input class="user-medical-history-input" type="text" name="consultant_education" style="width: 230px; height: 30px; padding: 5px; font-family: Lora; outline: none; border: none; border-radius: 5px;">
-             <button style="background-color: #6499E9; width: 70px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 1px 1px black;" type="button" name="consultant-education-btn">Add</button>
-           </div>
+             <button style="background-color: #6499E9; width: 70px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 1px 1px black;" type="submit" name="consultant-education-btn">Add</button>
+           </form>
          </div>
        </div>
      </div>
@@ -1096,6 +1193,16 @@ if (isset($_SESSION['cs_phone_number'])) {
      document.getElementById('manage-profile').style.display = 'none';
      document.getElementById('expertise-and-specialization').style.display = 'flex';
    });
+
+   function showServicesPopup() {
+      document.getElementById('servicesOverlay').style.display = 'block';
+      document.getElementById('servicesPopup').style.display = 'block';
+  }
+
+  function closeServicesPopup() {
+      document.getElementById('servicesPopup').style.display = 'none';
+      document.getElementById('servicesOverlay').style.display = 'none';
+  }
 
    </script>
 
