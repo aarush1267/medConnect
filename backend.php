@@ -32,6 +32,11 @@ if (isset($_POST['logInEmail']) && isset($_POST['logInPassword'])) {
     $_SESSION['user_gender'] = $row['gender'];
     $_SESSION['user_nationality'] = $row['country'];
     $_SESSION['user_phone_number'] = $row['phone'];
+    $_SESSION['user_about'] = $row['about'];
+    $_SESSION['user_blood_group'] = $row['blood'];
+    $_SESSION['user_weight'] = $row['weight'];
+    $_SESSION['user_height'] = $row['height'];
+    $_SESSION['user_medical_history'] = $row['history'];
 
     $_SESSION['signUpBtn'] = "1";
   } else {
