@@ -74,7 +74,7 @@ if (isset($_SESSION['cs_age'])) {
     $cs_age = "";
 }
 
-// user gender
+// consultant gender
 if (isset($_POST['consultant-gender-btn'])) {
     $cs_gender = $_POST['consultant_gender'];
     $update = "UPDATE users SET gender = '$cs_gender' WHERE email = '$csEmail'";
@@ -161,6 +161,111 @@ if (isset($_POST['consultant-services-btn'])) {
 
 // Assign services to a variable for use in HTML
 $cs_services = $_SESSION['cs_services'] ?? '';
+
+// consultant offline availability
+if (isset($_POST['consultant-availability-btn'])) {
+    $cs_offline = $_POST['consultant_availability'];
+    $update = "UPDATE users SET offline = '$cs_offline' WHERE email = '$csEmail'";
+    if(mysqli_query($connection, $update)) {
+        // Query the user's offline availability from the database after the update
+        $result = mysqli_query($connection, "SELECT offline FROM users WHERE email = '$csEmail'");
+        if ($row = mysqli_fetch_assoc($result)) {
+            $cs_offline = $row['offline'];
+            $_SESSION['cs_offline'] = $cs_offline;
+        }
+    }
+}
+
+if (isset($_SESSION['cs_offline'])) {
+    $cs_offline = $_SESSION['cs_offline'];
+} else {
+    $cs_offline = "";
+}
+
+// consultant city/locality
+if (isset($_POST['consultant-locality-btn'])) {
+    $cs_locality = $_POST['consultant_locality'];
+    $update = "UPDATE users SET city = '$cs_locality' WHERE email = '$csEmail'";
+    if(mysqli_query($connection, $update)) {
+        // Query the consultant's city/locality from the database after the update
+        $result = mysqli_query($connection, "SELECT city FROM users WHERE email = '$csEmail'");
+        if ($row = mysqli_fetch_assoc($result)) {
+            $cs_locality = $row['city'];
+            $_SESSION['cs_locality'] = $cs_locality;
+        }
+    }
+}
+
+if (isset($_SESSION['cs_locality'])) {
+    $cs_locality = $_SESSION['cs_locality'];
+} else {
+    $cs_locality = "";
+}
+
+// consultant hospital
+if (isset($_POST['consultant-hospital-btn'])) {
+    $cs_hospital = $_POST['consultant_hospital'];
+    $update = "UPDATE users SET hospital = '$cs_hospital' WHERE email = '$csEmail'";
+    if(mysqli_query($connection, $update)) {
+        // Query the consultant's hospital from the database after the update
+        $result = mysqli_query($connection, "SELECT hospital FROM users WHERE email = '$csEmail'");
+        if ($row = mysqli_fetch_assoc($result)) {
+            $cs_hospital = $row['hospital'];
+            $_SESSION['cs_hospital'] = $cs_hospital;
+        }
+    }
+}
+
+if (isset($_SESSION['cs_hospital'])) {
+    $cs_hospital = $_SESSION['cs_hospital'];
+} else {
+    $cs_hospital = "";
+}
+
+// Retrieve consultant education if not already set
+if (!isset($_SESSION['cs_education'])) {
+    $result = mysqli_query($connection, "SELECT education FROM users WHERE email = '$csEmail'");
+    if ($row = mysqli_fetch_assoc($result)) {
+        $_SESSION['cs_education'] = $row['education'];
+    }
+}
+
+// Update consultant's education when form is submitted
+if (isset($_POST['consultant-education-btn'])) {
+    $cs_education = mysqli_real_escape_string($connection, $_POST['consultant_education']);
+    $update = "UPDATE users SET education = '$cs_education' WHERE email = '$csEmail'";
+    if(mysqli_query($connection, $update)) {
+        $_SESSION['cs_education'] = $cs_education;
+    }
+}
+
+// Assign education to a variable for use in HTML
+$cs_education = $_SESSION['cs_education'] ?? '';
+
+// consultant about
+// Retrieve user about info if not already set
+if (!isset($_SESSION['cs_about'])) {
+    $result = mysqli_query($connection, "SELECT about FROM users WHERE email = '$csEmail'");
+    if ($row = mysqli_fetch_assoc($result)) {
+        $_SESSION['cs_about'] = $row['about'];
+    }
+}
+
+// Update consultant about section when form is submitted
+if (isset($_POST['consultant-about-btn'])) {
+    $cs_about = mysqli_real_escape_string($connection, $_POST['consultant_about']);
+    $update = "UPDATE users SET about = '$cs_about' WHERE email = '$csEmail'";
+    if (mysqli_query($connection, $update)) {
+        $_SESSION['cs_about'] = $cs_about;
+    }
+}
+
+// Assign about section to a variable for use in HTML
+$cs_about = $_SESSION['cs_about'] ?? '';
+
+function isFieldFilled($field) {
+    return isset($field) && !empty($field);
+}
 
  ?>
  <!DOCTYPE html>
@@ -587,13 +692,33 @@ $cs_services = $_SESSION['cs_services'] ?? '';
      color: black;
    }
 
+   /* Maintain styles for disabled input fields */
+    input[disabled], select[disabled] {
+        background-color: white !important;
+        color: black !important;
+        cursor: not-allowed;
+        opacity: 1 !important;
+    }
+
+    /* Maintain button styles when disabled */
+    button[disabled] {
+        background-color: #6499E9 !important;
+        color: black !important;
+        box-shadow: 0 1px 1px black !important;
+        cursor: not-allowed;
+        opacity: 1 !important;
+    }
+
    </style>
    <body>
 
    <!-- Navigation Bar -->
 
    <nav class="navbar">
-     <h1 onclick="location.href='consultant_index.php'" class="head">MedConnect</h1>
+     <div style="display: flex; flex-direction: column; gap: 0.2em;" onclick="location.href='consultant_index.php'">
+       <h1 class="head">MedConnect</h1>
+       <h4 style="margin-left: 83px; color: #614124;">For Consultants</h4>
+     </div>
 
      <ul class="nav-links">
        <div class="menu">
@@ -642,8 +767,8 @@ $cs_services = $_SESSION['cs_services'] ?? '';
              <h2 style="color: white;">Age</h2>
            </div>
            <form style="display: flex; gap: 1em;" method="post">
-             <input class="user-age-input" type="number" name="consultant_age" style="width: 100px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px;">
-             <button style="background-color: #6499E9; width: 70px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 1px 1px black;" type="submit" name="consultant-age-btn">Add</button>
+             <input class="user-age-input" type="number" name="consultant_age" style="width: 100px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px;" <?php echo isFieldFilled($cs_age) ? 'disabled' : ''; ?>>
+             <button <?php echo isFieldFilled($cs_age) ? 'disabled' : ''; ?> style="background-color: #6499E9; width: 70px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 1px 1px black;" type="submit" name="consultant-age-btn">Add</button>
            </form>
            <h3 style="position: absolute; margin-top: 57px; margin-left: 10px;"><?php echo $cs_age; ?></h3>
          </div>
@@ -652,13 +777,13 @@ $cs_services = $_SESSION['cs_services'] ?? '';
              <h2 style="color: white;">Gender</h2>
            </div>
            <form style="display: flex; gap: 1em;" method="post">
-             <select name="consultant_gender" id="user_gender" style="font-family: Lora; font-size: 15px; width: 100px; border-radius: 5px; outline: none;">
+             <select name="consultant_gender" id="user_gender" style="font-family: Lora; font-size: 15px; width: 100px; border-radius: 5px; outline: none;" <?php echo isFieldFilled($cs_gender) ? 'disabled' : ''; ?>>
                <option value="blank"></option>
                <option value="male">Male</option>
                <option value="female">Female</option>
                <option value="other">Other</option>
              </select>
-             <button style="background-color: #6499E9; width: 70px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 1px 1px black;" type="submit" name="consultant-gender-btn">Add</button>
+             <button <?php echo isFieldFilled($cs_gender) ? 'disabled' : ''; ?> style="background-color: #6499E9; width: 70px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 1px 1px black;" type="submit" name="consultant-gender-btn">Add</button>
            </form>
            <h3 style="position: absolute; margin-top: 57px; margin-left: 10px;"><?php echo $cs_gender; ?></h3>
          </div>
@@ -667,8 +792,8 @@ $cs_services = $_SESSION['cs_services'] ?? '';
              <h2 style="color: white;">Country/Nation</h2>
            </div>
            <form style="display: flex; gap: 1em;" method="post">
-             <input class="user-age-input" type="text" name="consultant_nationality" style="width: 150px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px;">
-             <button style="background-color: #6499E9; width: 70px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 1px 1px black;" type="submit" name="consultant-nationality-btn">Add</button>
+             <input class="user-age-input" type="text" name="consultant_nationality" style="width: 150px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px;" <?php echo isFieldFilled($cs_nationality) ? 'disabled' : ''; ?>>
+             <button <?php echo isFieldFilled($cs_nationality) ? 'disabled' : ''; ?> style="background-color: #6499E9; width: 70px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 1px 1px black;" type="submit" name="consultant-nationality-btn">Add</button>
            </form>
            <h3 style="position: absolute; margin-top: 57px; margin-left: 10px;"><?php echo $cs_nationality; ?></h3>
          </div>
@@ -682,8 +807,8 @@ $cs_services = $_SESSION['cs_services'] ?? '';
              <h2 style="color: white;">Phone Number</h2>
            </div>
            <form style="display: flex; gap: 1em;" method="post">
-             <input class="user-phone-input" type="number" name="consultant_phone_number" style="padding: 5px; width: 250px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px;">
-             <button style="background-color: #6499E9; width: 70px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 1px 1px black;" type="submit" name="consultant-phone-number-btn">Add</button>
+             <input class="user-phone-input" type="number" name="consultant_phone_number" style="padding: 5px; width: 250px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px;" <?php echo isFieldFilled($cs_phone_number) ? 'disabled' : ''; ?>>
+             <button <?php echo isFieldFilled($cs_phone_number) ? 'disabled' : ''; ?> style="background-color: #6499E9; width: 70px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 1px 1px black;" type="submit" name="consultant-phone-number-btn">Add</button>
            </form>
            <h3 style="position: absolute; margin-top: 50px; margin-left: 10px;"><?php echo $cs_phone_number; ?></h3>
          </div>
@@ -693,7 +818,7 @@ $cs_services = $_SESSION['cs_services'] ?? '';
            </div>
            <?php if (!empty($cs_services)): ?>
                <!-- Show button if services exist -->
-               <button id="showServicesPopupBtn" style="background-color: #6499E9; width: 130px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 1px 1px black;" onclick="showServicesPopup()">Services</button>
+               <button id="showServicesPopupBtn" style="background-color: #6499E9; width: 130px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 1px 1px black;" onclick="showServicesPopup()">Your Services</button>
            <?php else: ?>
                <!-- Show input field if no services exist -->
                <form style="display: flex; gap: 1em;" method="post">
@@ -866,11 +991,35 @@ $cs_services = $_SESSION['cs_services'] ?? '';
                        onclick="closeServicesPopup()">Close</button>
            </div>
            </div>
-         <div class="contact-details-about" style="display: flex; flex-direction: column; gap: 1em;">
-           <h2 style="color: white;">About</h2>
-           <textarea class="user-about-input" type="text" name="consultant_about" style="width: 330px; height: 60px; resize: none; padding: 5px; font-family: Lora; outline: none; border: none; border-radius: 5px;" placeholder="Write a little bit about yourself"></textarea>
-           <button style="margin: auto; background-color: #6499E9; width: 70px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 1px 1px black;" type="submit" name="user-about-btn">Add</button>
-         </div>
+           <div class="contact-details-about">
+            <h2 style="color: white; margin-top: -10px;">About</h2>
+
+            <?php if (!empty($cs_about)): ?>
+                <!-- Display the about content in a scrollable div -->
+                <div style="width: 330px;
+                            height: 80px;
+                            padding: 10px;
+                            margin-top: 25px;
+                            background-color: white;
+                            font-family: Lora;
+                            font-size: 16px;
+                            color: black;
+                            border-radius: 5px;
+                            overflow-y: auto;
+                            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);">
+                    <?php echo nl2br(htmlspecialchars($cs_about)); ?>
+                </div>
+            <?php else: ?>
+                <!-- Show input field if no about info exists -->
+                <form style="display: flex; flex-direction: column; gap: 1em;" method="post">
+                    <textarea class="user-about-input" type="text" name="consultant_about"
+                              style="width: 330px; height: 80px; resize: none; padding: 10px; font-family: Lora; outline: none; border: none; border-radius: 5px; margin-top: 10px;"
+                              placeholder="Write a little bit about yourself"></textarea>
+                    <button style="margin: auto; background-color: #6499E9; width: 70px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 1px 1px black;"
+                            type="submit" name="consultant-about-btn">Add</button>
+                </form>
+            <?php endif; ?>
+        </div>
        </div>
        <div class="contact-details-2">
          <div class="contact-details-blood-group">
@@ -878,41 +1027,102 @@ $cs_services = $_SESSION['cs_services'] ?? '';
              <h2 style="color: white;">Offline Availability</h2>
            </div>
            <form style="display: flex; gap: 1em;" method="post">
-             <select name="consultant_availability" id="offline_availability" style="font-family: Lora; font-size: 15px; width: 150px; border-radius: 5px; outline: none;">
+             <select name="consultant_availability" id="offline_availability" style="font-family: Lora; font-size: 15px; width: 150px; border-radius: 5px; outline: none;" <?php echo isFieldFilled($cs_offline) ? 'disabled' : ''; ?>>
                <option value="blank"></option>
                <option value="Yes">Yes</option>
                <option value="No">No</option>
              </select>
-             <button style="background-color: #6499E9; width: 70px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 1px 1px black;" type="submit" name="consultant-availability">Add</button>
+             <button <?php echo isFieldFilled($cs_offline) ? 'disabled' : ''; ?> style="background-color: #6499E9; width: 70px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 1px 1px black;" type="submit" name="consultant-availability-btn">Add</button>
            </form>
+           <h3 style="position: absolute; margin-top: 50px; margin-left: 10px;"><?php echo $cs_offline; ?></h3>
          </div>
          <div class="contact-details-weight">
            <div>
              <h2 style="color: white;">City/Locality</h2>
            </div>
            <form style="display: flex; gap: 1em;" method="post">
-             <input class="user-weight-input" type="number" name="consultant_locality" style="width: 230px; height: 30px; padding: 5px; font-family: Lora; outline: none; border: none; border-radius: 5px;">
-             <button style="background-color: #6499E9; width: 70px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 1px 1px black;" type="submit" name="consultant-locality-btn">Add</button>
+             <input class="user-weight-input" type="text" name="consultant_locality" style="width: 230px; height: 30px; padding: 5px; font-family: Lora; outline: none; border: none; border-radius: 5px;" <?php echo isFieldFilled($cs_locality) ? 'disabled' : ''; ?>>
+             <button <?php echo isFieldFilled($cs_locality) ? 'disabled' : ''; ?> style="background-color: #6499E9; width: 70px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 1px 1px black;" type="submit" name="consultant-locality-btn">Add</button>
            </form>
+           <h3 style="position: absolute; margin-top: 49px; margin-left: 10px;"><?php echo $cs_locality; ?></h3>
          </div>
          <div class="contact-details-height">
            <div>
              <h2 style="color: white;">Hospital</h2>
            </div>
            <form style="display: flex; gap: 1em;" method="post">
-             <input class="user-height-input" type="number" name="consultant_hospital" style="width: 230px; height: 30px; padding: 5px; font-family: Lora; outline: none; border: none; border-radius: 5px;">
-             <button style="background-color: #6499E9; width: 70px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 1px 1px black;" type="submit" name="consultant-hospital-btn">Add</button>
+             <input class="user-height-input" type="text" name="consultant_hospital" style="width: 230px; height: 30px; padding: 5px; font-family: Lora; outline: none; border: none; border-radius: 5px;" <?php echo isFieldFilled($cs_hospital) ? 'disabled' : ''; ?>>
+             <button <?php echo isFieldFilled($cs_hospital) ? 'disabled' : ''; ?> style="background-color: #6499E9; width: 70px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 1px 1px black;" type="submit" name="consultant-hospital-btn">Add</button>
            </form>
+           <h3 style="position: absolute; margin-top: 49px; margin-left: 10px;"><?php echo $cs_hospital; ?></h3>
          </div>
          <div class="contact-details-medical-history">
-           <div>
-             <h2 style="color: white;">Education</h2>
-           </div>
-           <form style="display: flex; gap: 1em;" method="post">
-             <input class="user-medical-history-input" type="text" name="consultant_education" style="width: 230px; height: 30px; padding: 5px; font-family: Lora; outline: none; border: none; border-radius: 5px;">
-             <button style="background-color: #6499E9; width: 70px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 1px 1px black;" type="submit" name="consultant-education-btn">Add</button>
-           </form>
-         </div>
+        <div>
+            <h2 style="color: white;">Education</h2>
+        </div>
+          <?php if (!empty($cs_education)): ?>
+              <!-- Show button if education exists -->
+              <button id="showEducationPopupBtn"
+                      style="background-color: #6499E9; width: 130px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 1px 1px black;"
+                      onclick="showEducationPopup()">Your Education</button>
+          <?php else: ?>
+              <!-- Show input field if no education exists -->
+              <form style="display: flex; gap: 1em;" method="post">
+                  <input class="user-education-input" type="text" name="consultant_education"
+                         style="width: 230px; height: 30px; padding: 5px; font-family: Lora; outline: none; border: none; border-radius: 5px;">
+                  <button style="background-color: #6499E9; width: 70px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 1px 1px black;"
+                          type="submit" name="consultant-education-btn">Add</button>
+              </form>
+          <?php endif; ?>
+
+          <!-- Popup Overlay -->
+          <div id="educationOverlay"
+               style="display: none;
+                      position: fixed;
+                      top: 0;
+                      left: 0;
+                      width: 100%;
+                      height: 100%;
+                      background: rgba(0, 0, 0, 0.5);
+                      z-index: 999;">
+          </div>
+
+          <!-- Popup Container -->
+          <div id="educationPopup"
+               style="display: none;
+                      position: fixed;
+                      top: 50%;
+                      left: 50%;
+                      transform: translate(-50%, -50%);
+                      background: #fff;
+                      width: 400px;
+                      padding: 30px;
+                      border-radius: 8px;
+                      box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+                      z-index: 1000;
+                      text-align: center;
+                      font-family: Lora;">
+              <h2 style="font-size: 24px; color: #333; margin-bottom: 20px;">Your Education</h2>
+              <p id="educationContent"
+                 style="font-size: 18px;
+                        color: #555;
+                        line-height: 1.5;
+                        max-width: 100%;
+                        word-wrap: break-word;">
+                  <?php echo htmlspecialchars($cs_education); ?>
+              </p>
+              <button style="padding: 12px 20px;
+                             margin-top: 20px;
+                             border: none;
+                             background-color: #60a159;
+                             font-size: 16px;
+                             color: white;
+                             border-radius: 5px;
+                             cursor: pointer;
+                             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);"
+                      onclick="closeEducationPopup()">Close</button>
+          </div>
+      </div>
        </div>
      </div>
 
@@ -1202,6 +1412,16 @@ $cs_services = $_SESSION['cs_services'] ?? '';
   function closeServicesPopup() {
       document.getElementById('servicesPopup').style.display = 'none';
       document.getElementById('servicesOverlay').style.display = 'none';
+  }
+
+  function showEducationPopup() {
+    document.getElementById('educationOverlay').style.display = 'block';
+    document.getElementById('educationPopup').style.display = 'block';
+  }
+
+  function closeEducationPopup() {
+      document.getElementById('educationOverlay').style.display = 'none';
+      document.getElementById('educationPopup').style.display = 'none';
   }
 
    </script>
