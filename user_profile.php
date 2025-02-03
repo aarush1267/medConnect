@@ -262,6 +262,30 @@ if (isset($_POST['user-medical-history-btn'])) {
 // Assign address to variable for use in HTML
 $user_medical_history = $_SESSION['user_medical_history'] ?? '';
 
+// user about
+// Retrieve user about info if not already set
+if (!isset($_SESSION['user_about'])) {
+    $result = mysqli_query($connection, "SELECT about FROM users WHERE email = '$userEmail'");
+    if ($row = mysqli_fetch_assoc($result)) {
+        $_SESSION['user_about'] = $row['about'];
+    }
+}
+
+// Update user about section when form is submitted
+if (isset($_POST['user-about-btn'])) {
+    $user_about = mysqli_real_escape_string($connection, $_POST['user_about']);
+    $update = "UPDATE users SET about = '$user_about' WHERE email = '$userEmail'";
+    if (mysqli_query($connection, $update)) {
+        $_SESSION['user_about'] = $user_about;
+    }
+}
+
+// Assign about section to a variable for use in HTML
+$user_about = $_SESSION['user_about'] ?? '';
+
+function isFieldFilled($field) {
+    return isset($field) && !empty($field);
+}
 
  ?>
 <!DOCTYPE html>
@@ -680,6 +704,23 @@ $user_medical_history = $_SESSION['user_medical_history'] ?? '';
     box-shadow: none;
   }
 
+  /* Maintain styles for disabled input fields */
+   input[disabled], select[disabled] {
+       background-color: white !important;
+       color: black !important;
+       cursor: not-allowed;
+       opacity: 1 !important;
+   }
+
+   /* Maintain button styles when disabled */
+   button[disabled] {
+       background-color: #6499E9 !important;
+       color: black !important;
+       box-shadow: 0 1px 1px black !important;
+       cursor: not-allowed;
+       opacity: 1 !important;
+   }
+
   </style>
   <body>
 
@@ -735,8 +776,8 @@ $user_medical_history = $_SESSION['user_medical_history'] ?? '';
             <h2 style="color: white;">Age</h2>
           </div>
           <form style="display: flex; gap: 1em;" method="post">
-            <input class="user-age-input" type="number" name="user_age" style="width: 100px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px;">
-            <button style="background-color: #6499E9; width: 70px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 1px 1px black;" type="submit" name="user-age-btn">Add</button>
+            <input class="user-age-input" type="number" name="user_age" style="width: 100px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px;" <?php echo isFieldFilled($user_age) ? 'disabled' : ''; ?>>
+            <button <?php echo isFieldFilled($user_age) ? 'disabled' : ''; ?> style="background-color: #6499E9; width: 70px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 1px 1px black;" type="submit" name="user-age-btn">Add</button>
           </form>
           <h3 style="position: absolute; margin-top: 57px; margin-left: 10px;"><?php echo $user_age; ?></h3>
         </div>
@@ -745,13 +786,13 @@ $user_medical_history = $_SESSION['user_medical_history'] ?? '';
             <h2 style="color: white;">Gender</h2>
           </div>
           <form style="display: flex; gap: 1em;" method="post">
-            <select name="user_gender" id="user_gender" style="font-family: Lora; font-size: 15px; width: 100px; border-radius: 5px; outline: none;">
+            <select name="user_gender" id="user_gender" style="font-family: Lora; font-size: 15px; width: 100px; border-radius: 5px; outline: none;" <?php echo isFieldFilled($user_gender) ? 'disabled' : ''; ?>>
               <option value="blank"></option>
               <option value="male">Male</option>
               <option value="female">Female</option>
               <option value="other">Other</option>
             </select>
-            <button style="background-color: #6499E9; width: 70px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 1px 1px black;" type="submit" name="user-gender-btn">Add</button>
+            <button <?php echo isFieldFilled($user_gender) ? 'disabled' : ''; ?> style="background-color: #6499E9; width: 70px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 1px 1px black;" type="submit" name="user-gender-btn">Add</button>
           </form>
           <h3 style="position: absolute; margin-top: 57px; margin-left: 10px;"><?php echo $user_gender; ?></h3>
         </div>
@@ -760,8 +801,8 @@ $user_medical_history = $_SESSION['user_medical_history'] ?? '';
             <h2 style="color: white;">Country/Nation</h2>
           </div>
           <form style="display: flex; gap: 1em;" method="post">
-            <input class="user-age-input" type="text" name="user_nationality" style="width: 150px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px;">
-            <button style="background-color: #6499E9; width: 70px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 1px 1px black;" type="submit" name="user-nationality-btn">Add</button>
+            <input class="user-age-input" type="text" name="user_nationality" style="width: 150px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px;" <?php echo isFieldFilled($user_nationality) ? 'disabled' : ''; ?>>
+            <button <?php echo isFieldFilled($user_nationality) ? 'disabled' : ''; ?> style="background-color: #6499E9; width: 70px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 1px 1px black;" type="submit" name="user-nationality-btn">Add</button>
           </form>
           <h3 style="position: absolute; margin-top: 57px; margin-left: 10px;"><?php echo $user_nationality; ?></h3>
         </div>
@@ -775,8 +816,8 @@ $user_medical_history = $_SESSION['user_medical_history'] ?? '';
             <h2 style="color: white;">Phone Number</h2>
           </div>
           <form style="display: flex; gap: 1em;" method="post">
-            <input class="user-phone-input" type="number" name="user_phone_number" style="padding: 5px; width: 250px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px;">
-            <button style="background-color: #6499E9; width: 70px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 1px 1px black;" type="submit" name="user-phone-number-btn">Add</button>
+            <input class="user-phone-input" type="number" name="user_phone_number" style="padding: 5px; width: 250px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px;" <?php echo isFieldFilled($user_phone_number) ? 'disabled' : ''; ?>>
+            <button <?php echo isFieldFilled($user_phone_number) ? 'disabled' : ''; ?> style="background-color: #6499E9; width: 70px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 1px 1px black;" type="submit" name="user-phone-number-btn">Add</button>
           </form>
           <h3 style="position: absolute; margin-top: 49px; margin-left: 10px;"><?php echo $user_phone_number; ?></h3>
         </div>
@@ -801,11 +842,35 @@ $user_medical_history = $_SESSION['user_medical_history'] ?? '';
           <p style="padding-top: 10px;" id="addressContent"><?php echo htmlspecialchars($user_address); ?></p>
           <button style="padding: 10px; margin-top: 20px; border: none; background-color: #60a159; color: white; border-radius: 5px; cursor: pointer;" onclick="closeAddressPopup()">Close</button>
         </div>
-        <form class="contact-details-about" style="display: flex; flex-direction: column; gap: 1em;" method="post">
-          <h2 style="color: white;">About</h2>
-          <textarea class="user-about-input" type="text" name="user_about" style="width: 330px; height: 60px; resize: none; padding: 5px; font-family: Lora; outline: none; border: none; border-radius: 5px;" placeholder="Write a little bit about yourself"></textarea>
-          <button style="margin: auto; background-color: #6499E9; width: 70px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 1px 1px black;" type="submit" name="user-about-btn">Add</button>
-        </form>
+        <div class="contact-details-about">
+          <h2 style="color: white; margin-top: -10px;">About</h2>
+
+          <?php if (!empty($user_about)): ?>
+              <!-- Display the about content in a scrollable div -->
+              <div style="width: 330px;
+                          height: 80px;
+                          padding: 10px;
+                          margin-top: 25px;
+                          background-color: white;
+                          font-family: Lora;
+                          font-size: 16px;
+                          color: black;
+                          border-radius: 5px;
+                          overflow-y: auto;
+                          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);">
+                  <?php echo nl2br(htmlspecialchars($user_about)); ?>
+              </div>
+          <?php else: ?>
+              <!-- Show input field if no about info exists -->
+              <form style="display: flex; flex-direction: column; gap: 1em;" method="post">
+                  <textarea class="user-about-input" type="text" name="user_about"
+                            style="width: 330px; height: 80px; resize: none; padding: 10px; font-family: Lora; outline: none; border: none; border-radius: 5px; margin-top: 10px;"
+                            placeholder="Write a little bit about yourself"></textarea>
+                  <button style="margin: auto; background-color: #6499E9; width: 70px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 1px 1px black;"
+                          type="submit" name="user-about-btn">Add</button>
+              </form>
+          <?php endif; ?>
+      </div>
       </div>
       <div class="contact-details-2">
         <div class="contact-details-blood-group">
@@ -813,7 +878,7 @@ $user_medical_history = $_SESSION['user_medical_history'] ?? '';
             <h2 style="color: white;">Blood Group</h2>
           </div>
           <form style="display: flex; gap: 1em;" method="post">
-            <select name="user_blood_group" id="user_blood_group" style="font-family: Lora; font-size: 15px; width: 150px; border-radius: 5px; outline: none;">
+            <select name="user_blood_group" id="user_blood_group" style="font-family: Lora; font-size: 15px; width: 150px; border-radius: 5px; outline: none;" <?php echo isFieldFilled($user_blood_group) ? 'disabled' : ''; ?>>
               <option value="blank"></option>
               <option value="A+">A+</option>
               <option value="B+">B+</option>
@@ -824,7 +889,7 @@ $user_medical_history = $_SESSION['user_medical_history'] ?? '';
               <option value="O+">O+</option>
               <option value="O-">O-</option>
             </select>
-            <button style="background-color: #6499E9; width: 70px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 1px 1px black;" type="submit" name="user-blood-group-btn">Add</button>
+            <button <?php echo isFieldFilled($user_blood_group) ? 'disabled' : ''; ?> style="background-color: #6499E9; width: 70px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 1px 1px black;" type="submit" name="user-blood-group-btn">Add</button>
           </form>
           <h3 style="position: absolute; margin-top: 49px; margin-left: 10px;"><?php echo $user_blood_group; ?></h3>
         </div>
@@ -833,8 +898,8 @@ $user_medical_history = $_SESSION['user_medical_history'] ?? '';
             <h2 style="color: white;">Weight (kg)</h2>
           </div>
           <form style="display: flex; gap: 1em;" method="post">
-            <input class="user-weight-input" type="number" name="user_weight" style="width: 150px; height: 30px; padding: 5px; font-family: Lora; outline: none; border: none; border-radius: 5px;">
-            <button style="background-color: #6499E9; width: 70px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 1px 1px black;" type="submit" name="user-weight-btn">Add</button>
+            <input class="user-weight-input" type="number" name="user_weight" style="width: 150px; height: 30px; padding: 5px; font-family: Lora; outline: none; border: none; border-radius: 5px;" <?php echo isFieldFilled($user_weight) ? 'disabled' : ''; ?>>
+            <button <?php echo isFieldFilled($user_weight) ? 'disabled' : ''; ?> style="background-color: #6499E9; width: 70px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 1px 1px black;" type="submit" name="user-weight-btn">Add</button>
           </form>
           <h3 style="position: absolute; margin-top: 49px; margin-left: 10px;"><?php echo $user_weight; ?></h3>
         </div>
@@ -843,8 +908,8 @@ $user_medical_history = $_SESSION['user_medical_history'] ?? '';
             <h2 style="color: white;">Height (cm)</h2>
           </div>
           <form style="display: flex; gap: 1em;" method="post">
-            <input class="user-height-input" type="number" name="user_height" style="width: 150px; height: 30px; padding: 5px; font-family: Lora; outline: none; border: none; border-radius: 5px;">
-            <button style="background-color: #6499E9; width: 70px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 1px 1px black;" type="submit" name="user-height-btn">Add</button>
+            <input class="user-height-input" type="number" name="user_height" style="width: 150px; height: 30px; padding: 5px; font-family: Lora; outline: none; border: none; border-radius: 5px;" <?php echo isFieldFilled($user_height) ? 'disabled' : ''; ?>>
+            <button <?php echo isFieldFilled($user_height) ? 'disabled' : ''; ?> style="background-color: #6499E9; width: 70px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 1px 1px black;" type="submit" name="user-height-btn">Add</button>
           </form>
           <h3 style="position: absolute; margin-top: 49px; margin-left: 10px;"><?php echo $user_height; ?></h3>
         </div>
@@ -869,6 +934,23 @@ $user_medical_history = $_SESSION['user_medical_history'] ?? '';
             <button style="padding: 10px; margin-top: 20px; border: none; background-color: #60a159; color: white; border-radius: 5px; cursor: pointer;" onclick="closeMedicalHistoryPopup()">Close</button>
           </div>
         </div>
+
+        <script>
+          document.addEventListener("DOMContentLoaded", function() {
+              var medicalHistoryBtn = document.getElementById("showMedicalHistoryBtn");
+              var medicalHistoryForm = document.getElementById("medicalHistoryForm");
+              var contactDetails = document.querySelector(".contact-details");
+
+              if (medicalHistoryBtn) {
+                  // If the button is displayed, adjust the margin
+                  contactDetails.style.marginLeft = "0px";
+              } else if (medicalHistoryForm) {
+                  // Reset margin if input field is shown
+                  contactDetails.style.marginLeft = "0px";
+              }
+          });
+        </script>
+
       </div>
     </div>
 
