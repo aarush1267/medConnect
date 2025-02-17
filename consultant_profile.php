@@ -377,6 +377,20 @@ function isFieldFilled($field) {
      margin-top: 30px;
    }
 
+   .heading-img img {
+     width: 100px;
+     border-radius: 100px;
+     margin-top: 20px;
+     cursor: pointer;
+   }
+
+   .heading-content {
+     display: flex;
+     justify-content: center;
+     flex-direction: row;
+     gap: 2em;
+   }
+
    .heading-txt h1 {
      color: #702c14;
    }
@@ -731,9 +745,22 @@ function isFieldFilled($field) {
      </ul>
    </nav>
 
-   <div class="heading-txt">
-     <h1>Your Profile</h1>
-     <h3>Welcome, Dr. <?php echo $csName; ?></h3>
+   <div class="heading-content">
+       <div class="heading-img" id="cs-heading-img">
+           <!-- Profile Picture (Clickable) -->
+           <img id="profile-pic"
+                src="<?php echo !empty($csProfilePic) ? $csProfilePic : 'medconnect_images/blank_profile_pic.png'; ?>"
+                alt="Profile Picture"
+                style="cursor: pointer;">
+
+           <!-- Hidden File Input -->
+           <input type="file" id="file-input" style="display: none;" accept="image/*">
+       </div>
+
+       <div class="heading-txt">
+           <h1>Your Profile</h1>
+           <h3>Welcome, Dr. <?php echo $csName; ?></h3>
+       </div>
    </div>
 
    <div class="container-1">
