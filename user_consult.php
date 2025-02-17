@@ -377,13 +377,16 @@
         }
 
         .testimonial {
-            flex: 0 0 70%; /* Each testimonial takes full width */
+            flex: 0 0 100%; /* Each testimonial takes full width */
             margin: 0 auto;
             background: white;
             padding: 30px;
             border-radius: 15px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             text-align: left;
+            box-sizing: border-box;
+            flex-basis: 20%;
+            max-width: 800px;
         }
 
         /* Ensure only the active testimonial is shown */
@@ -471,6 +474,82 @@
           }
         }
 
+        /* Search Results Popup */
+        .popup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 50%;
+            background: white;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            z-index: 1000;
+
+            /* Transition effect */
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease-in-out, visibility 0.3s;
+        }
+
+        .popup-content {
+            text-align: center;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        .search-result-item {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .search-result-item:hover {
+            background: #f5f5f5;
+        }
+
+        /* Overlay to dim background */
+        #overlay {
+            display: none; /* Initially hidden */
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5); /* Dark overlay */
+            z-index: 999; /* Behind the popup, but above everything else */
+
+            /* Transition effect */
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease-in-out, visibility 0.3s;
+        }
+
+        /* Ensure popup is above overlay */
+        .popup {
+            z-index: 1000;
+        }
+
+        /* Show popup & overlay with fade-in effect */
+        .popup.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        #overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
     </style>
 </head>
 <body>
@@ -495,7 +574,7 @@
     <div class="consult-tabs-container">
         <div class="consult-tabs">
             <span class="consult-tab" onclick="toggleConsultSection('previous')">Previous Consultations</span>
-            <span class="consult-tab active" onclick="toggleConsultSection('find')" onclick="showFindConsultSection()">Find a Consult</span>
+            <span class="consult-tab active" onclick="toggleConsultSection('find')">Find a Consult</span>
             <span class="consult-tab" onclick="toggleConsultSection('current')">Current Consultations</span>
         </div>
     </div>
@@ -524,103 +603,116 @@
     <p>No new notifications</p> <!-- Dynamic Content Here -->
 </div>
 
-<!-- User Consult Step-by-Step -->
-
-<div class="how-it-works-container">
-    <h2 class="how-it-works-title">How It Works</h2>
-    <h1 class="how-it-works-heading">Find & Book a Consultation</h1>
-
-    <div class="steps-container">
-        <div class="step">
-            <div class="step-icon"><i class="fas fa-search"></i></div>
-            <div class="step-title">Search</div>
-            <div class="step-description">Find a consultant based on specialty, name or relevant information.</div>
-        </div>
-
-        <div class="arrow">→</div>
-
-        <div class="step">
-            <div class="step-icon"><i class="fas fa-user-md"></i></div>
-            <div class="step-title">View</div>
-            <div class="step-description">Check consultant profile: details, expertise, and availability first.</div>
-        </div>
-
-        <div class="arrow">→</div>
-
-        <div class="step">
-            <div class="step-icon"><i class="fas fa-file-alt"></i></div>
-            <div class="step-title">Request</div>
-            <div class="step-description">Fill out the form details and submit a consultation request.</div>
-        </div>
-
-        <div class="arrow">→</div>
-
-        <div class="step">
-            <div class="step-icon"><i class="fas fa-check-circle"></i></div>
-            <div class="step-title">Approval</div>
-            <div class="step-description">The consultant accepts or rejects your request, based on your data.</div>
-        </div>
-
-        <div class="arrow">→</div>
-
-        <div class="step">
-            <div class="step-icon"><i class="fas fa-calendar-alt"></i></div>
-            <div class="step-title">Schedule</div>
-            <div class="step-description">Pick a time for the consultation and enter it in the consultation.</div>
-        </div>
-
-        <div class="arrow">→</div>
-
-        <div class="step">
-            <div class="step-icon"><i class="fas fa-video"></i></div>
-            <div class="step-title">Attend</div>
-            <div class="step-description">Join the consultation at the scheduled time, with the details.</div>
-        </div>
+<!-- Search Results Popup -->
+<div id="searchResultsPopup" class="popup">
+    <div class="popup-content">
+        <span class="close-btn" onclick="closePopup()">&times;</span>
+        <h2>Search Results</h2>
+        <div id="searchResults"></div>
     </div>
-
-    <a class="cta-button" onclick="focusSearchBar()">Start Your Search</a>
 </div>
 
-<!-- Testimonials -->
+<div id="overlay"></div>
 
-<div class="testimonials-container">
-    <h2 class="testimonials-title">What Our Users Say</h2>
-    <h1 class="testimonials-heading">Trusted by Users & Consultants</h1>
+<!-- Find Consult Section -->
 
-    <div class="testimonial-wrapper">
-        <button class="testimonial-nav left-nav" onclick="prevTestimonial()">&#10094;</button>
+<div id="findConsultSection">
+  <div class="how-it-works-container">
+      <h2 class="how-it-works-title">How It Works</h2>
+      <h1 class="how-it-works-heading">Find & Book a Consultation</h1>
 
-        <div class="testimonial-slider" style="display: flex; width: 300%;">
-            <div class="testimonial active">
-                <div class="star-rating">★★★★★</div>
-                <div class="testimonial-text">
-                    "This consultation service made it easy to find the right expert. The process was seamless, and I got valuable insights!"
-                </div>
-                <div class="testimonial-author">James R.</div>
-                <div class="testimonial-role">Consultation User</div>
-            </div>
+      <div class="steps-container">
+          <div class="step">
+              <div class="step-icon"><i class="fas fa-search"></i></div>
+              <div class="step-title">Search</div>
+              <div class="step-description">Find a consultant based on specialty, name or relevant information.</div>
+          </div>
 
-            <div class="testimonial">
-                <div class="star-rating">★★★★★</div>
-                <div class="testimonial-text">
-                    "The platform is intuitive and efficient. I booked a consult within minutes and got exactly the advice I needed!"
-                </div>
-                <div class="testimonial-author">Samantha L.</div>
-                <div class="testimonial-role">User - Business Strategy Consultation</div>
-            </div>
+          <div class="arrow">→</div>
 
-            <div class="testimonial">
-                <div class="star-rating">★★★★★</div>
-                <div class="testimonial-text">
-                    "As a consultant, I appreciate the seamless booking system. Clients can connect with me easily, and the interface is smooth!"
-                </div>
-                <div class="testimonial-author">Dr. Michael K.</div>
-                <div class="testimonial-role">Registered Consultant</div>
-            </div>
-        </div>
+          <div class="step">
+              <div class="step-icon"><i class="fas fa-user-md"></i></div>
+              <div class="step-title">View</div>
+              <div class="step-description">Check consultant profile: details, expertise, and availability first.</div>
+          </div>
 
-        <button class="testimonial-nav right-nav" onclick="nextTestimonial()">&#10095;</button>
-    </div>
+          <div class="arrow">→</div>
+
+          <div class="step">
+              <div class="step-icon"><i class="fas fa-file-alt"></i></div>
+              <div class="step-title">Request</div>
+              <div class="step-description">Fill out the form details and submit a consultation request.</div>
+          </div>
+
+          <div class="arrow">→</div>
+
+          <div class="step">
+              <div class="step-icon"><i class="fas fa-check-circle"></i></div>
+              <div class="step-title">Approval</div>
+              <div class="step-description">The consultant accepts or rejects your request, based on your data.</div>
+          </div>
+
+          <div class="arrow">→</div>
+
+          <div class="step">
+              <div class="step-icon"><i class="fas fa-calendar-alt"></i></div>
+              <div class="step-title">Schedule</div>
+              <div class="step-description">Pick a time for the consultation and enter it in the consultation.</div>
+          </div>
+
+          <div class="arrow">→</div>
+
+          <div class="step">
+              <div class="step-icon"><i class="fas fa-video"></i></div>
+              <div class="step-title">Attend</div>
+              <div class="step-description">Join the consultation at the scheduled time, with the details.</div>
+          </div>
+      </div>
+
+      <a class="cta-button" onclick="focusSearchBar()">Start Your Search</a>
+  </div>
+
+  <!-- Testimonials -->
+
+  <div class="testimonials-container">
+      <h2 class="testimonials-title">What Our Users Say</h2>
+      <h1 class="testimonials-heading">Trusted by Users & Consultants</h1>
+
+      <div class="testimonial-wrapper">
+          <button class="testimonial-nav left-nav" onclick="prevTestimonial()">&#10094;</button>
+
+          <div class="testimonial-slider">
+              <div class="testimonial">
+                  <div class="star-rating">★★★★★</div>
+                  <div class="testimonial-text">
+                      "This consultation service made it easy to find the right expert. The process was seamless, and I got valuable insights!"
+                  </div>
+                  <div class="testimonial-author">James R.</div>
+                  <div class="testimonial-role">Consultation User</div>
+              </div>
+
+              <div class="testimonial">
+                  <div class="star-rating">★★★★★</div>
+                  <div class="testimonial-text">
+                      "The platform is intuitive and efficient. I booked a consult within minutes and got exactly the advice I needed!"
+                  </div>
+                  <div class="testimonial-author">Samantha L.</div>
+                  <div class="testimonial-role">User - Business Strategy Consultation</div>
+              </div>
+
+              <div class="testimonial">
+                  <div class="star-rating">★★★★★</div>
+                  <div class="testimonial-text">
+                      "As a consultant, I appreciate the seamless booking system. Clients can connect with me easily, and the interface is smooth!"
+                  </div>
+                  <div class="testimonial-author">Dr. Michael K.</div>
+                  <div class="testimonial-role">Registered Consultant</div>
+              </div>
+          </div>
+
+          <button class="testimonial-nav right-nav" onclick="nextTestimonial()">&#10095;</button>
+      </div>
+  </div>
 </div>
 
 <!-- Footer -->
@@ -653,6 +745,7 @@
 </footer>
 
 <script>
+
     function toggleConsultSection(section) {
         // Remove active class from all tabs
         document.querySelectorAll('.consult-tab').forEach(tab => {
@@ -664,6 +757,9 @@
 
         // Show/hide search bar based on section
         document.getElementById('search-bar-container').style.display = section === 'find' ? 'flex' : 'none';
+
+        // Show "How It Works" & "Testimonials" only in "Find a Consult"
+        document.getElementById('findConsultSection').style.display = section === 'find' ? 'block' : 'none';
     }
 
     // Set default section to 'Find a Consult'
@@ -678,29 +774,112 @@
         document.getElementById("search-bar").focus();
     }
 
-    let currentTestimonial = 0;
-    const testimonials = document.querySelectorAll(".testimonial");
-    const totalTestimonials = testimonials.length;
+    let currentTestimonialIndex = 0;
+    const testimonialsPerSlide = 3;
+    const totalTestimonials = 9; // Total testimonials
+    const totalSections = totalTestimonials / testimonialsPerSlide;
+    const slider = document.querySelector(".testimonial-slider");
 
     function showTestimonial(index) {
-        const slider = document.querySelector(".testimonial-slider");
-        slider.style.transform = `translateX(-${index * 100}%)`;
+        let offset = -(index * 100); // Moves 100% per section
+        slider.style.transform = `translateX(${offset}%)`;
     }
 
     function prevTestimonial() {
-        currentTestimonial = (currentTestimonial === 0) ? totalTestimonials - 1 : currentTestimonial - 1;
-        showTestimonial(currentTestimonial);
+        currentTestimonialIndex = (currentTestimonialIndex === 0) ? totalSections - 1 : currentTestimonialIndex - 1;
+        showTestimonial(currentTestimonialIndex);
     }
 
     function nextTestimonial() {
-        currentTestimonial = (currentTestimonial === totalTestimonials - 1) ? 0 : currentTestimonial + 1;
-        showTestimonial(currentTestimonial);
+        currentTestimonialIndex = (currentTestimonialIndex === totalSections - 1) ? 0 : currentTestimonialIndex + 1;
+        showTestimonial(currentTestimonialIndex);
+    }
+
+    // AJAX for search results
+
+    document.addEventListener("DOMContentLoaded", function() {
+        document.getElementById("search-btn").addEventListener("click", function() {
+            let searchQuery = document.getElementById("search-bar").value.trim();
+
+            if (searchQuery === "") {
+                alert("Please enter a search term.");
+                return;
+            }
+
+            console.log("Sending search query:", searchQuery); // Debugging
+
+            fetch("search_consultants.php", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                },
+                body: new URLSearchParams({ query: searchQuery }), // Correct format
+            })
+            .then(response => response.text()) // Get raw response first
+            .then(text => {
+                console.log("Raw Response:", text); // Debugging output
+
+                try {
+                    let data = JSON.parse(text); // Parse JSON correctly
+                    console.log("Parsed Data:", data); // Debugging
+
+                    let resultsContainer = document.getElementById("searchResults");
+                    resultsContainer.innerHTML = "";
+
+                    if (data.length === 0) {
+                        resultsContainer.innerHTML = "<p>No consultants found.</p>";
+                    } else {
+                        data.forEach(consultant => {
+                            let consultantDiv = document.createElement("div");
+                            consultantDiv.classList.add("search-result-item");
+                            consultantDiv.innerHTML = `<strong>${consultant.name}</strong> - ${consultant.services}`;
+                            consultantDiv.onclick = function() {
+                                window.location.href = "consultant_profile.php?id=" + consultant.id;
+                            };
+                            resultsContainer.appendChild(consultantDiv);
+                        });
+                    }
+
+                    console.log("Opening popup...");
+                    openPopup();
+                } catch (error) {
+                    console.error("JSON Parsing Error:", error, "Response:", text);
+                }
+            })
+            .catch(error => console.error("AJAX Error:", error));
+        });
+    });
+
+    function openPopup() {
+        let popup = document.getElementById("searchResultsPopup");
+        let overlay = document.getElementById("overlay");
+
+        popup.classList.add("show"); // Apply fade-in effect
+        overlay.classList.add("show");
+
+        popup.style.display = "block"; // Ensure it's visible after animation
+        overlay.style.display = "block";
+    }
+
+    function closePopup() {
+        let popup = document.getElementById("searchResultsPopup");
+        let overlay = document.getElementById("overlay");
+
+        popup.classList.remove("show"); // Apply fade-out effect
+        overlay.classList.remove("show");
+
+        // Wait for animation to complete before hiding
+        setTimeout(() => {
+            popup.style.display = "none";
+            overlay.style.display = "none";
+        }, 300); // Same duration as CSS transition
     }
 
 </script>
 
-<!-- Font Awesome for Icons -->
-<script defer src="https://use.fontawesome.com/releases/v6.4.0/js/all.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="script.js"></script>
+  <script defer src="https://use.fontawesome.com/releases/v6.4.0/js/all.js"></script>
 
 </body>
 </html>
