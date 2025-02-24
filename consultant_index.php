@@ -670,7 +670,7 @@ if (!isset($_SESSION['signUpBtn'])) {
 <!-- Navigation Bar -->
 
 <nav class="navbar">
-  <div style="display: flex; flex-direction: column; gap: 0.2em;">
+  <div style="display: flex; flex-direction: column; gap: 0.2em;" onclick="location.href='consultant_index.php'">
     <h1 class="head">MedConnect</h1>
     <h4 style="margin-left: 83px; color: #614124;">For Consultants</h4>
   </div>
@@ -971,7 +971,7 @@ each_item[1].addEventListener('click', function onClick() {
   each_item[5].style.color = '#704a1b';
   heading.innerText = "Keep Track Of Everything";
   subheading.innerText = "Maintain";
-  body.innerText = "Keep track of all your consultations, patients, history and \n everything more and between. Our user-friendly interface \n helps support simple maintainence of your information and \n your patient's. Furthermore, using your consult tab, you can \n manage and update as per your needs.";
+  body.innerText = "Keep track of all your consultations, patients, history and \n everything more and between. Our user-friendly interface \n helps support simple maintainence of your information and \n your patients. Furthermore, using your consult tab, you can \n manage and update as per your needs.";
 });
 
 // Item 3
