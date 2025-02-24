@@ -287,6 +287,23 @@ function isFieldFilled($field) {
     return isset($field) && !empty($field);
 }
 
+// Profile Picture PHP
+
+$logged_in_email = $_SESSION['signUpEmail'] ?? null;
+
+// Fetch profile picture from the database
+$stmt = $connection->prepare("SELECT profile_pic FROM users WHERE email = ?");
+$stmt->bind_param("s", $logged_in_email);
+$stmt->execute();
+$result = $stmt->get_result();
+$row = $result->fetch_assoc();
+
+// Determine the profile picture path
+$profilePic = (!empty($row['profile_pic']) && file_exists($row['profile_pic'])) ? $row['profile_pic'] : "medconnect_images/blank_profile_pic.png";
+
+// Store in session for persistence
+$_SESSION['profile_pic'] = $profilePic;
+
  ?>
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
@@ -399,9 +416,12 @@ function isFieldFilled($field) {
 
   .heading-img img {
     width: 100px;
-    border-radius: 100px;
+    height: 100px;
+    object-fit: cover;
+    border-radius: 50%;
     margin-top: 20px;
     cursor: pointer;
+    border: 2px solid black;
   }
 
   .heading-content {
@@ -735,6 +755,29 @@ function isFieldFilled($field) {
        opacity: 1 !important;
    }
 
+   .footer-item {
+     color: white;
+     display: flex;
+     flex-direction: column;
+     gap: 2em;
+   }
+
+   .footer {
+     margin-top: 40px;
+     display: flex;
+     gap: 10em;
+     justify-content: center;
+     background-color: #302c2c;
+     padding: 50px;
+   }
+
+   @media screen and (max-width: 800px) {
+     .footer {
+       flex-direction: column;
+       gap: 3em;
+     }
+   }
+
   </style>
   <body>
 
@@ -756,7 +799,14 @@ function isFieldFilled($field) {
 
   <div class="heading-content">
     <div class="heading-img" id="user-heading-img">
-      <img src="medconnect_images/blank_profile_pic.png" alt="profile picture" name="user_heading_img">
+      <!-- Profile Picture (Clickable) -->
+      <img id="profile-pic"
+           src="<?php echo $_SESSION['profile_pic']; ?>"
+           alt="Profile Picture"
+           style="cursor: pointer;" onclick="triggerFileUpload()">
+
+      <!-- Hidden File Input (Fixing the ID) -->
+      <input type="file" id="file-input" style="display: none;" accept="image/*">
     </div>
     <div class="heading-txt">
       <h1>Your Profile</h1>
@@ -1140,6 +1190,35 @@ function isFieldFilled($field) {
     </div>
   </div>
 
+  <!-- Footer -->
+
+  <footer>
+    <div class="footer">
+      <div class="footer-item footer-1">
+        <h1 class="footer-head">MedConnect</h1>
+        <h3>Need help? Contact us at <br> support@medconnect.com</h3>
+        <div style="display: flex; flex-direction: column; gap: 2em;">
+          <p><abbr style="cursor: pointer; border-bottom: 1px dashed white;">Terms of Service</abbr> & <abbr style="cursor: pointer; border-bottom: 1px dashed white;"> Privacy Policy</abbr></p>
+          <p>MedConnect © 2023</p>
+        </div>
+      </div>
+      <div class="footer-item footer-2">
+        <u><b><p>Services</p></b></u>
+        <p style="cursor: pointer;">Consult</p>
+        <p style="cursor: pointer;">Profile</p>
+        <p style="cursor: pointer;">Resources</p>
+        <p style="cursor: pointer;">Your Directory</p>
+      </div>
+      <div class="footer-item footer-3">
+        <u><b><p>About</p></b></u>
+        <p style="cursor: pointer;">FAQ</p>
+        <p style="cursor: pointer;">Testimonials</p>
+        <p style="cursor: pointer;">About Us</p>
+        <p style="cursor: pointer;">Contact</p>
+      </div>
+    </div>
+  </footer>
+
   <script type="text/javascript">
 
   function togglePassword(elementId) {
@@ -1219,6 +1298,47 @@ function isFieldFilled($field) {
         document.getElementById('medicalHistoryPopup').style.display = 'none';
         document.getElementById('overlay').style.display = 'none';
     }
+
+    // Profile Picture AJAX
+
+    // Function to trigger file upload when profile picture is clicked
+    function triggerFileUpload() {
+        document.getElementById('file-input').click();
+    }
+
+    // Handle file selection and upload process
+    document.getElementById('file-input').addEventListener('change', function() {
+        let file = this.files[0];
+        if (!file) return;
+
+        let formData = new FormData();
+        formData.append("profile_pic", file);
+        formData.append("email", "<?php echo $logged_in_email; ?>"); // Send user's email
+
+        fetch("upload_profile_pic.php", {
+            method: "POST",
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('profile-pic').src = data.file_path; // Update the image immediately
+                // Save in session storage to persist across page reloads
+                sessionStorage.setItem('profile_pic', data.file_path);
+            } else {
+                alert("Error uploading image: " + data.error);
+            }
+        })
+        .catch(error => console.error("Upload failed:", error));
+    });
+
+    document.addEventListener("DOMContentLoaded", function () {
+      let savedProfilePic = sessionStorage.getItem('profile_pic');
+      if (savedProfilePic) {
+          document.getElementById('profile-pic').src = savedProfilePic;
+      }
+    });
+
   </script>
 
   <script defer src="https://use.fontawesome.com/releases/v6.4.0/js/all.js"></script>
