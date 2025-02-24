@@ -47,6 +47,9 @@ if (isset($_POST['logInEmail']) && isset($_POST['logInPassword'])) {
     $_SESSION['cs_phone_number'] = $row['phone'];
     $_SESSION['cs_services'] = $row['services'];
     $_SESSION['cs_about'] = $row['about'];
+    $_SESSION['cs_specializations'] = $row['specializations'];
+    $_SESSION['cs_awards'] = $row['awards'];
+    $_SESSION['cs_experience'] = $row['experience'];
 
     $_SESSION['signUpBtn'] = "1";
   } else {
