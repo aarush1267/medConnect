@@ -1,3 +1,16 @@
+<?php
+
+session_start();
+
+if (!isset($_SESSION['signUpBtn'])) {
+  header("Location:login.php"); // Not Logged In (Redirect Back to Login/Sign Up Page)
+} elseif (isset($_SESSION['signUpBtn']) && !isset($_SESSION['role'])) {
+  header("Location:role.php");
+} elseif ($_SESSION['role'] === 'consultant') {
+  header("Location:consultant_index.php");
+}
+
+?>
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
 <head>
@@ -506,15 +519,71 @@
             cursor: pointer;
         }
 
-        .search-result-item {
+        /* Search Results Container */
+        .search-results-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            max-height: 400px;
+            overflow-y: auto;
             padding: 10px;
-            border-bottom: 1px solid #ddd;
+            margin-top: 10px;
+        }
+
+        /* Search Result Item - Consultant Card */
+        .search-result-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
             cursor: pointer;
             transition: background 0.3s ease;
+            border-bottom: 1px solid #ddd;
         }
 
         .search-result-item:hover {
-            background: #f5f5f5;
+            background-color: #e9ecef;
+        }
+
+        /* Profile Picture */
+        .profile-img {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            flex-shrink: 0;
+        }
+
+        /* Consultant Info */
+        .consultant-info {
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            text-align: center;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Consultant Name */
+        .consultant-name {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        /* Consultant Details (Age, Gender, Hospital) */
+        .consultant-details {
+            font-size: 14px;
+            color: #666;
+        }
+
+        /* Consultant Services - Styled with '•' separator */
+        .consultant-services {
+            font-size: 14px;
+            color: #333;
+            font-style: italic;
         }
 
         /* Overlay to dim background */
@@ -608,7 +677,7 @@
     <div class="popup-content">
         <span class="close-btn" onclick="closePopup()">&times;</span>
         <h2>Search Results</h2>
-        <div id="searchResults"></div>
+        <div id="searchResults" class="search-results-container"></div>
     </div>
 </div>
 
@@ -802,7 +871,7 @@
             let searchQuery = document.getElementById("search-bar").value.trim();
 
             if (searchQuery === "") {
-                alert("Please enter a search term.");
+                document.getElementById("search-bar").style.border = '1px solid red';
                 return;
             }
 
@@ -828,15 +897,30 @@
 
                     if (data.length === 0) {
                         resultsContainer.innerHTML = "<p>No consultants found.</p>";
+                        document.getElementById("search-bar").style.border = '1px solid black';
                     } else {
+                        document.getElementById("search-bar").style.border = '1px solid green';
+
                         data.forEach(consultant => {
-                            let consultantDiv = document.createElement("div");
-                            consultantDiv.classList.add("search-result-item");
-                            consultantDiv.innerHTML = `<strong>${consultant.name}</strong> - ${consultant.services}`;
-                            consultantDiv.onclick = function() {
-                                window.location.href = "consultant_profile.php?id=" + consultant.id;
-                            };
-                            resultsContainer.appendChild(consultantDiv);
+                            let formattedServices = consultant.services
+                                .split(", ") // Split services by comma
+                                .map(service => formatServiceName(service)) // Format each service
+                                .join(" • "); // Join with bullet points
+
+                            let resultItem = `
+                                <div class="search-result-item" onclick="window.location.href='view_consultant.php?id=${consultant.id}'">
+                                    <div class="profile-img-container">
+                                        <img src="${consultant.profile_pic || 'medconnect_images/blank_profile_pic.png'}" alt="Consultant Profile Picture" class="profile-img">
+                                    </div>
+                                    <div class="consultant-info">
+                                        <h2 class="consultant-name">${consultant.name}</h2>
+                                        <p class="consultant-details">${consultant.age} • ${consultant.gender} • ${consultant.hospital}</p>
+                                        <p class="consultant-services">${formattedServices}</p>
+                                    </div>
+                                </div>
+                            `;
+
+                            resultsContainer.innerHTML += resultItem;
                         });
                     }
 
@@ -849,6 +933,14 @@
             .catch(error => console.error("AJAX Error:", error));
         });
     });
+
+    // Function to format services
+    function formatServiceName(service) {
+        return service
+            .split('_') // Split by underscores
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1)) // Capitalize each word
+            .join(' '); // Join with spaces
+    }
 
     function openPopup() {
         let popup = document.getElementById("searchResultsPopup");
