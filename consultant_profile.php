@@ -267,6 +267,93 @@ function isFieldFilled($field) {
     return isset($field) && !empty($field);
 }
 
+// Profile Picture PHP
+
+$logged_in_email = $_SESSION['signUpEmail'] ?? null;
+
+// Fetch profile picture from the database
+$stmt = $connection->prepare("SELECT profile_pic FROM users WHERE email = ?");
+$stmt->bind_param("s", $logged_in_email);
+$stmt->execute();
+$result = $stmt->get_result();
+$row = $result->fetch_assoc();
+
+// Determine the profile picture path
+$profilePic = (!empty($row['profile_pic']) && file_exists($row['profile_pic'])) ? $row['profile_pic'] : "medconnect_images/blank_profile_pic.png";
+
+// Store in session for persistence
+$_SESSION['profile_pic'] = $profilePic;
+
+// consultant specializations
+if (!isset($_SESSION['cs_specializations'])) {
+    $result = mysqli_query($connection, "SELECT specializations FROM users WHERE email = '$csEmail'");
+    if ($row = mysqli_fetch_assoc($result)) {
+        $_SESSION['cs_specializations'] = $row['specializations'];
+    }
+}
+
+// Update consultant's specializations when form is submitted
+if (isset($_POST['consultant-specializations-btn'])) {
+    if (isset($_POST['consultant_specializations']) && is_array($_POST['consultant_specializations'])) {
+        // Convert the array into a comma-separated string
+        $cs_specializations = implode(", ", $_POST['consultant_specializations']);
+
+        // Escape the string to prevent SQL injection
+        $cs_specializations = mysqli_real_escape_string($connection, $cs_specializations);
+
+        // Update the database
+        $update = "UPDATE users SET specializations = '$cs_specializations' WHERE email = '$csEmail'";
+        if(mysqli_query($connection, $update)) {
+            $_SESSION['cs_specializations'] = $cs_specializations;
+        }
+    }
+}
+
+// Assign specializations to a variable for use in HTML
+$cs_specializations = $_SESSION['cs_specializations'] ?? '';
+
+// Retrieve consultant awards if not already set
+if (!isset($_SESSION['cs_awards'])) {
+    $result = mysqli_query($connection, "SELECT awards FROM users WHERE email = '$csEmail'");
+    if ($row = mysqli_fetch_assoc($result)) {
+        $_SESSION['cs_awards'] = $row['awards'];
+    }
+}
+
+// Consultant awards
+// Update consultant's awards when form is submitted
+if (isset($_POST['consultant-awards-btn'])) {
+    $cs_awards = mysqli_real_escape_string($connection, $_POST['consultant_awards']);
+    $update = "UPDATE users SET awards = '$cs_awards' WHERE email = '$csEmail'";
+    if(mysqli_query($connection, $update)) {
+        $_SESSION['cs_awards'] = $cs_awards;
+    }
+}
+
+// Assign awards to a variable for use in HTML
+$cs_awards = $_SESSION['cs_awards'] ?? '';
+
+// consultant experience
+// Retrieve user experience info if not already set
+if (!isset($_SESSION['cs_experience'])) {
+    $result = mysqli_query($connection, "SELECT experience FROM users WHERE email = '$csEmail'");
+    if ($row = mysqli_fetch_assoc($result)) {
+        $_SESSION['cs_experience'] = $row['experience'];
+    }
+}
+
+// Update consultant experience section when form is submitted
+if (isset($_POST['consultant-experience-btn'])) {
+    $cs_experience = mysqli_real_escape_string($connection, $_POST['consultant_experience']);
+    $update = "UPDATE users SET experience = '$cs_experience' WHERE email = '$csEmail'";
+    if (mysqli_query($connection, $update)) {
+        $_SESSION['cs_experience'] = $cs_experience;
+    }
+}
+
+// Assign experience section to a variable for use in HTML
+$cs_experience = $_SESSION['cs_experience'] ?? '';
+
  ?>
  <!DOCTYPE html>
  <html lang="en" dir="ltr">
@@ -379,9 +466,12 @@ function isFieldFilled($field) {
 
    .heading-img img {
      width: 100px;
-     border-radius: 100px;
+     height: 100px;
+     object-fit: cover;
+     border-radius: 50%;
      margin-top: 20px;
      cursor: pointer;
+     border: 2px solid black;
    }
 
    .heading-content {
@@ -737,9 +827,9 @@ function isFieldFilled($field) {
      <ul class="nav-links">
        <div class="menu">
          <li><h3>Consult</h3></li>
+         <li><h3>Feed</h3></li>
          <li><h3>Resources</h3></li>
          <li><h3>About</h3></li>
-         <li><h3>Records</h3></li>
          <li><h3 onclick="location.href='consultant_profile.php'" class="profile-btn" style="color: white;">Your Profile</h3></li>
        </div>
      </ul>
@@ -747,14 +837,14 @@ function isFieldFilled($field) {
 
    <div class="heading-content">
        <div class="heading-img" id="cs-heading-img">
-           <!-- Profile Picture (Clickable) -->
-           <img id="profile-pic"
-                src="<?php echo !empty($csProfilePic) ? $csProfilePic : 'medconnect_images/blank_profile_pic.png'; ?>"
-                alt="Profile Picture"
-                style="cursor: pointer;">
+         <!-- Profile Picture (Clickable) -->
+         <img id="profile-pic"
+              src="<?php echo $_SESSION['profile_pic']; ?>"
+              alt="Profile Picture"
+              style="cursor: pointer;" onclick="triggerFileUpload()">
 
-           <!-- Hidden File Input -->
-           <input type="file" id="file-input" style="display: none;" accept="image/*">
+         <!-- Hidden File Input (Fixing the ID) -->
+         <input type="file" id="file-input" style="display: none;" accept="image/*">
        </div>
 
        <div class="heading-txt">
@@ -1296,27 +1386,207 @@ function isFieldFilled($field) {
      <div style="display: none;" class="contact-details" id="expertise-and-specialization">
        <div class="contact-details-1">
          <div class="contact-details-phone-number">
-           <div>
-             <h2 style="color: white;">Specializations</h2>
-           </div>
-           <div style="display: flex; gap: 1em;">
-             <input class="consultant-specializations" type="text" name="consultant_specializations" style="padding: 5px; width: 250px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px;">
-             <button style="background-color: #6499E9; width: 70px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 1px 1px black;" type="button" name="consultant-specializations-btn">Add</button>
-           </div>
+             <div>
+                 <h2 style="color: white;">Specializations</h2>
+             </div>
+             <?php if (!empty($cs_specializations)): ?>
+                 <!-- Show button if specializations exist -->
+                 <button id="showSpecializationsPopupBtn"
+                         style="background-color: #6499E9; width: 150px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 1px 1px black;"
+                         onclick="showSpecializationsPopup()">Your Specializations</button>
+             <?php else: ?>
+                 <!-- Show input field if no specializations exist -->
+                 <form style="display: flex; gap: 1em;" method="post">
+                     <select class="consultant-specializations" name="consultant_specializations[]" multiple
+                             style="width: 250px; height: 40px; padding: 5px; font-family: Lora; outline: none; border: none; border-radius: 5px;">
+                         <option value="general_medicine">General Medicine</option>
+                         <option value="pediatrics">Pediatrics</option>
+                         <option value="cardiology">Cardiology</option>
+                         <option value="neurology">Neurology</option>
+                         <option value="orthopedics">Orthopedics</option>
+                         <option value="dermatology">Dermatology</option>
+                         <option value="psychiatry">Psychiatry</option>
+                         <option value="oncology">Oncology</option>
+                         <option value="gastroenterology">Gastroenterology</option>
+                         <option value="endocrinology">Endocrinology</option>
+                         <option value="rheumatology">Rheumatology</option>
+                         <option value="nephrology">Nephrology</option>
+                         <option value="ophthalmology">Ophthalmology</option>
+                         <option value="urology">Urology</option>
+                         <option value="pulmonology">Pulmonology</option>
+                         <option value="obstetrics_gynecology">Obstetrics & Gynecology</option>
+                         <option value="anesthesiology">Anesthesiology</option>
+                         <option value="hematology">Hematology</option>
+                         <option value="immunology">Immunology</option>
+                         <option value="infectious_diseases">Infectious Diseases</option>
+                         <option value="sports_medicine">Sports Medicine</option>
+                         <option value="plastic_surgery">Plastic Surgery</option>
+                         <option value="vascular_surgery">Vascular Surgery</option>
+                         <option value="pain_management">Pain Management</option>
+                     </select>
+                     <button style="background-color: #6499E9; width: 70px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 1px 1px black;"
+                             type="submit" name="consultant-specializations-btn">Add</button>
+                 </form>
+             <?php endif; ?>
+
+             <!-- Popup Overlay -->
+             <div id="specializationsOverlay"
+                  style="display: none;
+                         position: fixed;
+                         top: 0;
+                         left: 0;
+                         width: 100%;
+                         height: 100%;
+                         background: rgba(0, 0, 0, 0.5);
+                         z-index: 999;">
+             </div>
+
+             <!-- Popup Container -->
+             <div id="specializationsPopup"
+                  style="display: none;
+                         position: fixed;
+                         top: 50%;
+                         left: 50%;
+                         transform: translate(-50%, -50%);
+                         background: #fff;
+                         width: 400px;
+                         padding: 30px;
+                         border-radius: 8px;
+                         box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+                         z-index: 1000;
+                         text-align: center;
+                         font-family: Lora;">
+                 <h2 style="font-size: 24px; color: #333; margin-bottom: 20px;">Your Specializations</h2>
+                 <p id="specializationsContent"
+                    style="font-size: 18px;
+                           color: black;
+                           line-height: 1.5;
+                           max-width: 100%;
+                           word-wrap: break-word;">
+                     <?php
+                     if (!empty($cs_specializations)) {
+                         // Convert string to array
+                         $specializations_array = explode(", ", $cs_specializations);
+
+                         // Convert each specialization to a readable format
+                         $formatted_specializations = array_map(function($specialization) {
+                             return ucwords(str_replace("_", " ", $specialization));
+                         }, $specializations_array);
+
+                         // Join the formatted specializations back into a string
+                         echo htmlspecialchars(implode(", ", $formatted_specializations));
+                     } else {
+                         echo "No specializations selected.";
+                     }
+                     ?>
+                 </p>
+                 <button style="padding: 12px 20px;
+                                margin-top: 20px;
+                                border: none;
+                                background-color: #60a159;
+                                font-size: 16px;
+                                color: white;
+                                border-radius: 5px;
+                                cursor: pointer;
+                                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);"
+                         onclick="closeSpecializationsPopup()">Close</button>
+             </div>
          </div>
-         <div class="contact-details-address">
-           <div>
-             <h2 style="color: white;">Awards/Recognitions</h2>
-           </div>
-           <div style="display: flex; gap: 1em;">
-             <input class="consultant-award" type="text" name="consultant_awards" style="width: 250px; height: 30px; padding: 5px; font-family: Lora; outline: none; border: none; border-radius: 5px;">
-             <button style="background-color: #6499E9; width: 70px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 1px 1px black;" type="button" name="consultant-awards-btn">Add</button>
-           </div>
-           </div>
-         <div class="contact-details-about" style="display: flex; flex-direction: column; gap: 1em;">
-           <h2 style="color: white;">Experience</h2>
-           <textarea class="consultant-experience" type="text" name="consultant_experience" style="width: 330px; height: 60px; resize: none; padding: 5px; font-family: Lora; outline: none; border: none; border-radius: 5px;" placeholder="Write a little bit about your experiences"></textarea>
-           <button style="margin: auto; background-color: #6499E9; width: 70px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 1px 1px black;" type="button" name="user-experience-btn">Add</button>
+         <div class="contact-details-awards">
+             <div>
+                 <h2 style="color: white;">Awards/Recognitions</h2>
+             </div>
+             <?php if (!empty($cs_awards)): ?>
+                 <!-- Show button if awards exist -->
+                 <button id="showAwardsPopupBtn"
+                         style="margin-top: 20px; background-color: #6499E9; width: 130px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 1px 1px black;"
+                         onclick="showAwardsPopup()">Your Awards</button>
+             <?php else: ?>
+                 <!-- Show input field if no awards exist -->
+                 <form style="margin-top: 20px; display: flex; gap: 1em;" method="post">
+                     <input class="consultant-awards" type="text" name="consultant_awards"
+                            style="width: 250px; height: 30px; padding: 5px; font-family: Lora; outline: none; border: none; border-radius: 5px;">
+                     <button style="background-color: #6499E9; width: 70px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 1px 1px black;"
+                             type="submit" name="consultant-awards-btn">Add</button>
+                 </form>
+             <?php endif; ?>
+
+             <!-- Popup Overlay -->
+             <div id="awardsOverlay"
+                  style="display: none;
+                         position: fixed;
+                         top: 0;
+                         left: 0;
+                         width: 100%;
+                         height: 100%;
+                         background: rgba(0, 0, 0, 0.5);
+                         z-index: 999;">
+             </div>
+
+             <!-- Popup Container -->
+             <div id="awardsPopup"
+                  style="display: none;
+                         position: fixed;
+                         top: 50%;
+                         left: 50%;
+                         transform: translate(-50%, -50%);
+                         background: #fff;
+                         width: 400px;
+                         padding: 30px;
+                         border-radius: 8px;
+                         box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+                         z-index: 1000;
+                         text-align: center;
+                         font-family: Lora;">
+                 <h2 style="font-size: 24px; color: #333; margin-bottom: 20px;">Your Awards</h2>
+                 <p id="awardsContent"
+                    style="font-size: 18px;
+                           color: #555;
+                           line-height: 1.5;
+                           max-width: 100%;
+                           word-wrap: break-word;">
+                     <?php echo htmlspecialchars($cs_awards); ?>
+                 </p>
+                 <button style="padding: 12px 20px;
+                                margin-top: 20px;
+                                border: none;
+                                background-color: #60a159;
+                                font-size: 16px;
+                                color: white;
+                                border-radius: 5px;
+                                cursor: pointer;
+                                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);"
+                         onclick="closeAwardsPopup()">Close</button>
+             </div>
+         </div>
+         <div class="contact-details-experience">
+             <h2 style="color: white; margin-top: -10px;">Experience</h2>
+
+             <?php if (!empty($cs_experience)): ?>
+                 <!-- Display the experience content in a scrollable div -->
+                 <div style="width: 330px;
+                             height: 80px;
+                             padding: 10px;
+                             margin-top: 25px;
+                             background-color: white;
+                             font-family: Lora;
+                             font-size: 16px;
+                             color: black;
+                             border-radius: 5px;
+                             overflow-y: auto;
+                             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);">
+                     <?php echo nl2br(htmlspecialchars($cs_experience)); ?>
+                 </div>
+             <?php else: ?>
+                 <!-- Show input field if no experience info exists -->
+                 <form style="display: flex; flex-direction: column; gap: 1em;" method="post">
+                     <textarea class="user-experience-input" type="text" name="consultant_experience"
+                               style="width: 330px; height: 80px; resize: none; padding: 10px; font-family: Lora; outline: none; border: none; border-radius: 5px; margin-top: 10px;"
+                               placeholder="Write a little bit about your experiences"></textarea>
+                     <button style="margin: auto; background-color: #6499E9; width: 70px; height: 30px; font-family: Lora; outline: none; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 1px 1px black;"
+                             type="submit" name="consultant-experience-btn">Add</button>
+                 </form>
+             <?php endif; ?>
          </div>
        </div>
        <div class="contact-details-2" style="display: flex; gap: 3em;">
@@ -1450,6 +1720,66 @@ function isFieldFilled($field) {
       document.getElementById('educationOverlay').style.display = 'none';
       document.getElementById('educationPopup').style.display = 'none';
   }
+
+  function showSpecializationsPopup() {
+    document.getElementById("specializationsPopup").style.display = "block";
+    document.getElementById("specializationsOverlay").style.display = "block";
+}
+
+function closeSpecializationsPopup() {
+    document.getElementById("specializationsPopup").style.display = "none";
+    document.getElementById("specializationsOverlay").style.display = "none";
+}
+
+function showAwardsPopup() {
+    document.getElementById("awardsPopup").style.display = "block";
+    document.getElementById("awardsOverlay").style.display = "block";
+}
+
+function closeAwardsPopup() {
+    document.getElementById("awardsPopup").style.display = "none";
+    document.getElementById("awardsOverlay").style.display = "none";
+}
+
+  // Profile Picture AJAX
+
+  // Function to trigger file upload when profile picture is clicked
+  function triggerFileUpload() {
+      document.getElementById('file-input').click();
+  }
+
+  // Handle file selection and upload process
+  document.getElementById('file-input').addEventListener('change', function() {
+      let file = this.files[0];
+      if (!file) return;
+
+      let formData = new FormData();
+      formData.append("profile_pic", file);
+      formData.append("email", "<?php echo $logged_in_email; ?>"); // Send consultant's email
+
+      fetch("upload_profile_pic.php", {
+          method: "POST",
+          body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+          if (data.success) {
+              document.getElementById('profile-pic').src = data.file_path; // Update the image immediately
+              // Save in session storage to persist across page reloads
+              sessionStorage.setItem('profile_pic', data.file_path);
+          } else {
+              alert("Error uploading image: " + data.error);
+          }
+      })
+      .catch(error => console.error("Upload failed:", error));
+  });
+
+  document.addEventListener("DOMContentLoaded", function () {
+    let savedProfilePic = sessionStorage.getItem('profile_pic');
+    if (savedProfilePic) {
+        document.getElementById('profile-pic').src = savedProfilePic;
+    }
+  });
 
    </script>
 
