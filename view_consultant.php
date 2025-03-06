@@ -238,6 +238,8 @@ li {
     gap: 70px;
     max-width: 90%;
     margin: 0 auto;
+    top: -80px; /* Move Upward */
+    margin-top: -50px;
 }
 
 /* Individual Info Box Styling */
@@ -249,7 +251,6 @@ li {
     text-align: center;
     transition: transform 0.3s ease-in-out;
     position: relative;
-    top: -80px; /* Move Upward */
 }
 
 /* Icon Container (Circle at the Top) */
@@ -293,9 +294,9 @@ li {
 .left-info-container {
     display: flex;
     flex-direction: column;
-    gap: 20px; /* Adds spacing between About & Services */
+    gap: 40px; /* Adds spacing between About & Services */
     background: #f3f3f3; /* Light Grey Background */
-    padding: 20px;
+    padding: 30px;
     border-radius: 10px;
     width: 500px;
 }
@@ -330,6 +331,105 @@ li {
     flex-direction: column;
     gap: 3em;
   }
+}
+
+.consultation-section {
+    text-align: center;
+    padding: 50px;
+    background-color: #F8D4A4; /* Matches MedConnect Theme */
+}
+
+.consultation-title {
+    font-size: 35px;
+    font-weight: bold;
+    color: #5A3E2B;
+    margin-bottom: 40px;
+    margin-top: 20px;
+}
+
+/* Grid Layout */
+.consultation-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* 3 per row */
+    gap: 100px;
+    justify-content: center;
+    max-width: 1100px;
+    margin: 0 auto;
+    margin-top: 100px;
+}
+
+/* Consultation Box */
+.consultation-box {
+    background: transparent; /* No background */
+    text-align: center;
+    position: relative;
+}
+
+/* Icon Half Inside Circle */
+.consultation-icon {
+    width: 70px;
+    height: 70px;
+    background-color: white;
+    color: #5A3E2B;
+    font-size: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    position: absolute;
+    left: 50%;
+    top: -35px; /* Half outside the box */
+    transform: translateX(-50%);
+    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+/* Text Box */
+.consultation-box h2 {
+    font-size: 18px;
+    color: #5A3E2B;
+    margin-top: 70px; /* Adjust to fit under the icon */
+    font-weight: bold;
+}
+
+.consultation-box p {
+    font-size: 16px;
+    color: #5A3E2B;
+    max-width: 80%;
+    margin: 10px auto;
+    line-height: 1.5;
+}
+
+/* Request Button */
+.consultation-btn {
+    margin-top: 50px;
+    background-color: #5FA159;
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+    padding: 15px 30px;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+    transition: 0.3s;
+    font-family: Lora;
+    box-shadow: 0 1px 1px black;
+}
+
+.consultation-btn:active {
+    box-shadow: none;
+}
+
+/* Responsive Adjustments */
+@media screen and (max-width: 900px) {
+    .consultation-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media screen and (max-width: 600px) {
+    .consultation-grid {
+        grid-template-columns: repeat(1, 1fr);
+    }
 }
 
 </style>
@@ -440,10 +540,61 @@ li {
       </div>
     </div>
 
-      <!-- Request Consultation Button -->
-      <div class="consultation-actions">
-          <button class="request-consult-btn">Request Consultation</button>
+    <div class="consultation-section">
+      <h1 class="consultation-title">Why Book A Consultation?</h1>
+
+      <div class="consultation-grid">
+          <div class="consultation-box">
+              <div class="consultation-icon">
+                  <i class="fas fa-user-md"></i> <!-- Doctor icon -->
+              </div>
+              <h2>Medical Guidance</h2>
+              <p>Get professional advice from verified healthcare experts who volunteer to tailor to your health needs.</p>
+          </div>
+
+          <div class="consultation-box">
+              <div class="consultation-icon">
+                  <i class="fas fa-clock"></i> <!-- Clock icon -->
+              </div>
+              <h2>Flexible Scheduling</h2>
+              <p>Book consultations at your convenience with available time slots, by providing relevant details.</p>
+          </div>
+
+          <div class="consultation-box">
+              <div class="consultation-icon">
+                  <i class="fas fa-video"></i> <!-- Video Call icon -->
+              </div>
+              <h2>Online or In-Person</h2>
+              <p>Choose between online video consultations or in-person visits with our consultants, accordingly.</p>
+          </div>
+
+          <div class="consultation-box">
+              <div class="consultation-icon">
+                  <i class="fas fa-shield-alt"></i> <!-- Shield/Security icon -->
+              </div>
+              <h2>Confidential & Secure</h2>
+              <p>Your consultations are private and handled with the highest level of security at all times.</p>
+          </div>
+
+          <div class="consultation-box">
+              <div class="consultation-icon">
+                  <i class="fas fa-stethoscope"></i> <!-- Stethoscope icon -->
+              </div>
+              <h2>Comprehensive Care</h2>
+              <p>Receive personalized prescriptions and relevant medical assistance.</p>
+          </div>
+
+          <div class="consultation-box">
+              <div class="consultation-icon">
+                  <i class="fas fa-check-circle"></i> <!-- Check mark icon -->
+              </div>
+              <h2>Trustworthy</h2>
+              <p>Join the other patients who trust MedConnect for their healthcare needs.</p>
+          </div>
       </div>
+
+      <button class="consultation-btn">Request a Consultation From Dr. <?php echo htmlspecialchars($consultant['name']); ?></button>
+    </div>
   </div>
 
   <!-- Footer -->
