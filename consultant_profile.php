@@ -826,7 +826,7 @@ $cs_experience = $_SESSION['cs_experience'] ?? '';
 
      <ul class="nav-links">
        <div class="menu">
-         <li><h3>Consult</h3></li>
+         <li><h3 onclick="location.href='consultant_consult.php'">Consult</h3></li>
          <li><h3>Feed</h3></li>
          <li><h3>Resources</h3></li>
          <li><h3>About</h3></li>
