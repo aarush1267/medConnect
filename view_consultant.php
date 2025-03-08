@@ -11,6 +11,14 @@ $database = "medconnect";
 
 $connection = mysqli_connect($dbHost, $dbUser, $dbPass, $database) or die ("Sorry, couldn't connect to the database");
 
+if (!isset($_SESSION['signUpBtn'])) {
+  header("Location:login.php"); // Not Logged In (Redirect Back to Login/Sign Up Page)
+} elseif (isset($_SESSION['signUpBtn']) && !isset($_SESSION['role'])) {
+  header("Location:role.php");
+} elseif ($_SESSION['role'] === 'consultant') {
+  header("Location:consultant_index.php");
+}
+
 // Get consultant ID from URL
 $consultant_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 if ($consultant_id === 0) {
@@ -432,6 +440,131 @@ li {
     }
 }
 
+/* Consultation Request Popup Styling */
+.popup {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 450px;
+    background: white;
+    padding: 25px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    z-index: 1000;
+    font-family: Lora;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+}
+
+/* Overlay Background */
+.popup-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+}
+
+.popup.show {
+    display: block;
+    opacity: 1;
+    visibility: visible;
+}
+
+.popup-overlay.show {
+    display: block;
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Popup Content */
+.popup-content {
+    text-align: center;
+    position: relative;
+    font-family: Lora;
+}
+
+.popup button {
+    background-color: #5FA159; /* Matches MedConnect theme */
+    color: white;
+    font-size: 13px;
+    font-weight: bold;
+    padding: 12px 20px;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+    transition: 0.3s;
+    font-family: 'Lora', serif;
+    box-shadow: 0 1px 1px black;
+    margin-top: 5px;
+}
+
+/* Button Active & Hover Effects */
+.popup button:hover {
+    background-color: #4e8a45;
+}
+
+.popup button:active {
+    box-shadow: none;
+}
+
+/* Close Button */
+.close-btn {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 24px;
+    cursor: pointer;
+    color: #888;
+}
+
+.close-btn:hover {
+    color: black;
+}
+
+/* Input Fields */
+#consultationForm label {
+    font-size: 16px;
+    font-weight: bold;
+    color: #5A3E2B;
+    display: block;
+    margin: 12px 0 5px;
+}
+
+#consultationForm select,
+#consultationForm input,
+#consultationForm textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 15px;
+    background: #f9f9f9;
+    font-family: Lora;
+    resize: none;
+}
+
+#consultationForm input[type="date"],
+#consultationForm input[type="time"] {
+    cursor: pointer;
+}
+
+/* Responsive Styling */
+@media screen and (max-width: 500px) {
+    .popup {
+        width: 90%;
+    }
+}
+
 </style>
 <body>
 
@@ -593,8 +726,47 @@ li {
           </div>
       </div>
 
-      <button class="consultation-btn">Request a Consultation From Dr. <?php echo htmlspecialchars($consultant['name']); ?></button>
+      <button class="consultation-btn" onclick="openConsultForm()">Request a Consultation From Dr. <?php echo htmlspecialchars($consultant['name']); ?></button>
     </div>
+  </div>
+
+  <!-- Popup Overlay -->
+  <div id="popupOverlay" class="popup-overlay" onclick="closePopup()"></div>
+
+  <!-- Consultation Request Popup -->
+  <div id="consultationPopup" class="popup">
+      <div class="popup-content">
+          <span class="close-btn" onclick="closeConsultForm()">&times;</span>
+          <h2>Request a Consultation</h2>
+
+          <form id="consultationForm" enctype="multipart/form-data">
+              <input type="hidden" name="consultant_id" value="<?php echo $consultant_id; ?>">
+
+              <label for="symptoms">Symptoms:</label>
+              <select id="symptoms" name="symptoms" required>
+                  <option value="">Select Symptoms</option>
+                  <option value="Fever">Fever</option>
+                  <option value="Cough">Cough</option>
+              </select>
+
+              <label for="reason">Details/Reason:</label>
+              <textarea id="reason" name="details" rows="3" required></textarea>
+
+              <label for="date">Preferred Date:</label>
+              <input type="date" id="date" name="date" required>
+
+              <label for="time">Preferred Time:</label>
+              <input type="time" id="time" name="time" required>
+
+              <label for="medical_docs">Medical Documents (Optional):</label>
+              <input type="file" id="medical_docs" name="medical_docs" accept=".pdf,.jpg,.png">
+
+              <label for="notes">Additional Notes (Optional):</label>
+              <textarea id="notes" name="notes" rows="2"></textarea>
+
+              <button type="submit">Submit Request</button>
+          </form>
+      </div>
   </div>
 
   <!-- Footer -->
@@ -626,6 +798,54 @@ li {
     </div>
   </footer>
 
+  <script type="text/javascript">
+
+  function openConsultForm() {
+      let popup = document.getElementById("consultationPopup");
+      let overlay = document.getElementById("popupOverlay");
+
+      popup.style.display = "block";
+      overlay.style.display = "block";
+
+      setTimeout(() => {
+          popup.classList.add("show");
+          overlay.classList.add("show");
+      }, 10);
+  }
+
+  function closeConsultForm() {
+      let popup = document.getElementById("consultationPopup");
+      let overlay = document.getElementById("popupOverlay");
+
+      popup.classList.remove("show");
+      overlay.classList.remove("show");
+
+      setTimeout(() => {
+          popup.style.display = "none";
+          overlay.style.display = "none";
+      }, 300);
+  }
+
+  document.getElementById("consultationForm").addEventListener("submit", function(event) {
+      event.preventDefault();
+      let formData = new FormData(this);
+
+      fetch("request_consult.php", {
+          method: "POST",
+          body: formData
+      })
+      .then(response => response.text())
+      .then(data => {
+          alert(data);
+          closeConsultForm();
+      })
+      .catch(error => console.error("Error:", error));
+  });
+
+  </script>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script src="script.js"></script>
 <script defer src="https://use.fontawesome.com/releases/v6.4.0/js/all.js"></script>
 </body>
 </html>
