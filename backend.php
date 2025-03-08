@@ -26,6 +26,7 @@ if (isset($_POST['logInEmail']) && isset($_POST['logInPassword'])) {
 
     $_SESSION['role'] = $row['role'];
 
+    $_SESSION['id'] = $row['id'];
     $_SESSION['signUpName'] = $row['name'];
     $_SESSION['signUpEmail'] = $row['email'];
     $_SESSION['user_age'] = $row['age'];
