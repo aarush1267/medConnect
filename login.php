@@ -32,6 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['logInEmail'], $_POST[
             $_SESSION['signUpEmail'] = $row['email'];
             $_SESSION['signUpPassword'] = $password; // Store only if necessary
             $_SESSION['role'] = $row['role'];
+            $_SESSION['id'] = $row['id'];
 
             // Redirect based on role
             if ($row['role'] === 'user') {
