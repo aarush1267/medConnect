@@ -10,6 +10,50 @@ if (!isset($_SESSION['signUpBtn'])) {
   header("Location:user_index.php");
 }
 
+$consultant_id = $_SESSION['id'];
+
+// Database Connection
+$dbHost = "localhost";
+$dbUser = "root";
+$dbPass = "root";
+$database = "medconnect";
+$connection = mysqli_connect($dbHost, $dbUser, $dbPass, $database) or die ("Connection Failed");
+
+// Fetch Consultations
+if (isset($_GET['fetchConsultations'])) {
+    header('Content-Type: application/json');
+
+    $query = "SELECT c.*, u.name AS user_name
+              FROM consultations c
+              JOIN users u ON c.user_id = u.id
+              WHERE c.consultant_id = $consultant_id AND c.status = 'pending'
+              ORDER BY c.created_at DESC";
+
+    $result = mysqli_query($connection, $query);
+    $consultations = [];
+
+    while ($row = mysqli_fetch_assoc($result)) {
+        $consultations[] = $row;
+    }
+
+    echo json_encode($consultations);
+    mysqli_close($connection);
+    exit;
+}
+
+if (isset($_GET['getNotificationCount'])) {
+    // Count unread consultations
+    $query = "SELECT COUNT(*) AS count FROM consultations WHERE consultant_id = $consultant_id AND status = 'pending'";
+    $result = mysqli_query($connection, $query);
+    $row = mysqli_fetch_assoc($result);
+
+    echo json_encode(['count' => $row['count']]);
+    exit;
+}
+
+// Close Connection
+mysqli_close($connection);
+
 ?>
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
@@ -224,9 +268,79 @@ if (!isset($_SESSION['signUpBtn'])) {
             left: 30px;
             background: white;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-            padding: 10px;
+            padding: 20px;
             border-radius: 5px;
-            width: 250px;
+            width: 280px;
+            z-index: 999;
+        }
+
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5); /* Dimmed background */
+            z-index: 998; /* Behind the popup, above everything else */
+        }
+
+        .notifications-dropdown h3 {
+            font-size: 20px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 10px;
+            color: #5A3E2B;
+        }
+
+        .notification-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .notification-item {
+            background: #F8D4A4;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .notification-item p {
+            font-size: 14px;
+            margin: 5px 0;
+        }
+
+        .accept-btn, .reject-btn {
+            background-color: #60A159;
+            color: white;
+            font-size: 14px;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-right: 5px;
+        }
+
+        .reject-btn {
+            background-color: #C0392B;
+        }
+
+        .accept-btn:hover {
+            background-color: #4D8A48;
+        }
+
+        .reject-btn:hover {
+            background-color: #A93226;
+        }
+
+        .notification-badge {
+            background: #D84040;
+            color: white;
+            font-size: 12px;
+            padding: 5px 8px;
+            border-radius: 5px;
+            margin-left: 5px;
         }
 
         .how-it-works-container {
@@ -440,6 +554,131 @@ if (!isset($_SESSION['signUpBtn'])) {
           }
         }
 
+        .popup-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+        }
+
+.popup-box {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+    width: 400px;
+    font-family: Lora;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.popup-box h2 {
+    color: #5A3E2B;
+    margin-bottom: 15px;
+}
+
+textarea {
+    width: 100%;
+    height: 80px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 10px;
+    font-family: Lora;
+    resize: none;
+}
+
+.reject-confirm-btn {
+    background-color: #D9534F;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+    font-family: Lora;
+    margin-top: 10px;
+}
+
+.close-btn {
+    background-color: #777;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+    font-family: Lora;
+    margin-top: 10px;
+}
+
+.reject-confirm-btn:hover {
+    background-color: #C9302C;
+}
+
+.close-btn:hover {
+    background-color: #555;
+}
+
+.consultation-card {
+    display: flex;
+    align-items: center;
+    background: white;
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-bottom: 15px;
+    transition: transform 0.2s ease-in-out;
+    cursor: pointer;
+    max-width: 800px;
+    width: 90%;
+    margin-left: auto;
+    margin-right: auto;
+    gap: 2em;
+}
+
+.consultation-card p {
+    margin-bottom: 10px; /* Adjust this value to control spacing */
+}
+
+.consultation-card:hover {
+    transform: scale(1.02);
+}
+
+.consultation-left {
+    flex: 0 0 60px;
+    margin-right: 15px;
+}
+
+.profile-pic {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.consultation-right {
+    flex-grow: 1;
+}
+
+.status {
+    font-weight: bold;
+    padding: 5px 10px;
+    border-radius: 5px;
+}
+
+.status.pending {
+    background-color: #f4c430;
+    color: white;
+}
+
+.status.accepted {
+    background-color: #60a159;
+    color: white;
+}
+
     </style>
 </head>
 <body>
@@ -453,11 +692,11 @@ if (!isset($_SESSION['signUpBtn'])) {
 
     <ul class="nav-links">
         <div class="menu">
-            <li><h3 onclick="location.href='user_consult.php'">Consult</h3></li>
+            <li><h3 onclick="location.href='consultant_consult.php'">Consult</h3></li>
             <li><h3>Feed</h3></li>
             <li><h3>Resources</h3></li>
             <li><h3>About</h3></li>
-            <li><h3 onclick="location.href='user_profile.php'" class="profile-btn" style="color: white;">Your Profile</h3></li>
+            <li><h3 onclick="location.href='consultant_profile.php'" class="profile-btn" style="color: white;">Your Profile</h3></li>
         </div>
     </ul>
 </nav>
@@ -477,6 +716,7 @@ if (!isset($_SESSION['signUpBtn'])) {
     <!-- Notifications Button (Left of Search Bar) -->
     <button style="margin-right: 20px;" class="nav-btn" onclick="toggleNotifications()">
         <i class="fa-solid fa-bell"></i>
+        <span id="notification-count" class="notification-badge">0</span>
     </button>
 
     <!-- Settings Button (Right of Search Bar) -->
@@ -485,9 +725,13 @@ if (!isset($_SESSION['signUpBtn'])) {
     </button>
 </div>
 
+<!-- Dimmed Overlay -->
+<div id="overlay" class="overlay"></div>
+
 <!-- Notifications Dropdown (Initially Hidden) -->
-<div id="notificationsDropdown">
-    <p>No new notifications</p> <!-- Dynamic Content Here -->
+<div id="notificationsDropdown" class="notifications-dropdown">
+  <h3>Pending Consultations</h3>
+  <div id="notification-list" class="notification-list"></div>
 </div>
 
 <!-- Find Consult Section -->
@@ -589,6 +833,12 @@ if (!isset($_SESSION['signUpBtn'])) {
   </div>
 </div>
 
+<!-- Current Consultations Section -->
+
+<div id="currentConsultationsSection" style="display: none;">
+    <div id="currentConsultationsList"></div>
+</div>
+
 <!-- Footer -->
 
 <footer>
@@ -618,6 +868,16 @@ if (!isset($_SESSION['signUpBtn'])) {
   </div>
 </footer>
 
+<!-- Rejection Popup -->
+<div id="rejectionPopup" class="popup-overlay">
+    <div class="popup-box">
+        <h2>Why are you rejecting this patient?</h2>
+        <textarea id="rejectionReason" placeholder="Enter reason here..." rows="4"></textarea>
+        <button class="reject-confirm-btn" onclick="submitRejection()">Reject</button>
+        <button class="close-btn" onclick="closeRejectionPopup()">Cancel</button>
+    </div>
+</div>
+
 <script>
 
     function toggleConsultSection(section) {
@@ -639,36 +899,218 @@ if (!isset($_SESSION['signUpBtn'])) {
     // Set default section to 'Find a Consult'
     toggleConsultSection('find');
 
+    let unreadNotificationCount = 0; // Track unread notifications
+
+    function fetchNotificationCount() {
+        fetch('consultant_consult.php?getNotificationCount=true')
+        .then(response => response.json())
+        .then(data => {
+            unreadNotificationCount = data.count;
+            document.getElementById("notification-count").innerText = unreadNotificationCount;
+        })
+        .catch(error => console.error("Error fetching notification count:", error));
+    }
+
     function toggleNotifications() {
         const dropdown = document.getElementById('notificationsDropdown');
-        dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+        const overlay = document.getElementById('overlay');
+
+        // Toggle Dropdown Visibility
+        const isVisible = dropdown.style.display === 'block';
+        dropdown.style.display = isVisible ? 'none' : 'block';
+        overlay.style.display = isVisible ? 'none' : 'block';
+
+        // If opening, fetch notifications & reset unread count
+        if (!isVisible) {
+            fetch('consultant_consult.php?fetchConsultations=true')
+            .then(response => response.json())
+            .then(data => {
+                const notificationList = document.getElementById("notification-list");
+                notificationList.innerHTML = "";
+
+                if (data.error) {
+                    notificationList.innerHTML = `<p style="color: red;">${data.error}</p>`;
+                    return;
+                }
+
+                if (data.length === 0) {
+                    notificationList.innerHTML = `<p style="margin-left: 15px;">Nothing Here!</p>`;
+                    return;
+                }
+
+                // Display consultations in the dropdown
+                data.forEach(consultation => {
+                    const consultationHTML = `
+                        <div class="notification-item">
+                            <p><strong>From:</strong> ${consultation.user_name}</p>
+                            <p><strong>Symptoms:</strong> ${consultation.symptoms}</p>
+                            <p><strong>Date:</strong> ${consultation.date} | <strong>Time:</strong> ${consultation.time}</p>
+                            ${consultation.medical_docs ? `<p><a href="${consultation.medical_docs}" target="_blank">View Medical Documents</a></p>` : ""}
+                            <div class="button-group">
+                                <button class="accept-btn" onclick="processConsultation(${consultation.id}, 'accept')">Accept</button>
+                                <button type='button' class="reject-btn" onclick="openRejectionPopup(${consultation.id})">Reject</button>
+                            </div>
+                        </div>
+                    `;
+                    notificationList.innerHTML += consultationHTML;
+                });
+
+                // Reset unread count to zero (since the user has now read them)
+                unreadNotificationCount = 0;
+                document.getElementById("notification-count").innerText = unreadNotificationCount;
+            })
+            .catch(error => console.error("Error fetching consultations:", error));
+        }
     }
 
-    function focusSearchBar() {
-        document.getElementById("search-bar").focus();
+    // Fetch notification count on page load
+    document.addEventListener("DOMContentLoaded", fetchNotificationCount);
+
+    // Allow clicking on overlay to close the dropdown
+    document.getElementById('overlay').addEventListener('click', function() {
+        document.getElementById('notificationsDropdown').style.display = 'none';
+        this.style.display = 'none';
+    });
+
+    function processConsultation(consultationId, action) {
+        fetch('process_consult.php', {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: `consultation_id=${consultationId}&action=${action}`
+        })
+        .then(response => response.text())
+        .then(data => {
+            alert(data);
+            toggleNotifications(); // Refresh Notifications List
+        })
+        .catch(error => console.error("Error:", error));
     }
 
-    let currentTestimonialIndex = 0;
-    const testimonialsPerSlide = 3;
-    const totalTestimonials = 9; // Total testimonials
-    const totalSections = totalTestimonials / testimonialsPerSlide;
-    const slider = document.querySelector(".testimonial-slider");
+  // Rejection Reason and Reject System
 
-    function showTestimonial(index) {
-        let offset = -(index * 100); // Moves 100% per section
-        slider.style.transform = `translateX(${offset}%)`;
-    }
+  let rejectConsultationId = null;
 
-    function prevTestimonial() {
-        currentTestimonialIndex = (currentTestimonialIndex === 0) ? totalSections - 1 : currentTestimonialIndex - 1;
-        showTestimonial(currentTestimonialIndex);
-    }
+  function openRejectionPopup(consultationId) {
+      rejectConsultationId = consultationId; // Store the consultation ID
+      document.getElementById("rejectionPopup").style.display = "flex";
+  }
 
-    function nextTestimonial() {
-        currentTestimonialIndex = (currentTestimonialIndex === totalSections - 1) ? 0 : currentTestimonialIndex + 1;
-        showTestimonial(currentTestimonialIndex);
-    }
+  function closeRejectionPopup() {
+      document.getElementById("rejectionPopup").style.display = "none";
+  }
 
+  function submitRejection() {
+      let reason = document.getElementById("rejectionReason").value.trim();
+
+      if (reason === "") {
+          alert("Please provide a reason for rejection.");
+          return;
+      }
+
+      fetch("process_consult.php", {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: `consultation_id=${rejectConsultationId}&action=reject&rejection_reason=${encodeURIComponent(reason)}`
+      })
+      .then(response => response.text())
+      .then(data => {
+          alert(data);
+          closeRejectionPopup();
+          location.reload(); // Refresh page to update consultations
+      })
+      .catch(error => console.error("Error:", error));
+  }
+
+  // Testimonials Javascript
+
+  function focusSearchBar() {
+      document.getElementById("search-bar").focus();
+  }
+
+  let currentTestimonialIndex = 0;
+  const testimonialsPerSlide = 3;
+  const totalTestimonials = 9; // Total testimonials
+  const totalSections = totalTestimonials / testimonialsPerSlide;
+  const slider = document.querySelector(".testimonial-slider");
+
+  function showTestimonial(index) {
+      let offset = -(index * 100); // Moves 100% per section
+      slider.style.transform = `translateX(${offset}%)`;
+  }
+
+  function prevTestimonial() {
+      currentTestimonialIndex = (currentTestimonialIndex === 0) ? totalSections - 1 : currentTestimonialIndex - 1;
+      showTestimonial(currentTestimonialIndex);
+  }
+
+  function nextTestimonial() {
+      currentTestimonialIndex = (currentTestimonialIndex === totalSections - 1) ? 0 : currentTestimonialIndex + 1;
+      showTestimonial(currentTestimonialIndex);
+  }
+
+  // Current Consultations
+
+  document.addEventListener("DOMContentLoaded", function () {
+    fetchCurrentConsultations();
+  });
+
+  function fetchCurrentConsultations() {
+      fetch("fetch_current_consults.php")
+          .then(response => response.json())
+          .then(data => {
+              const consultationsContainer = document.getElementById("currentConsultationsList");
+              consultationsContainer.innerHTML = ""; // Clear existing entries
+
+              if (data.error) {
+                  consultationsContainer.innerHTML = `<p style="color: red;">${data.error}</p>`;
+                  return;
+              }
+
+              if (data.length === 0) {
+                  consultationsContainer.innerHTML = `<p>No ongoing consultations.</p>`;
+                  return;
+              }
+
+              data.forEach(consultation => {
+                  const consultDiv = document.createElement("div");
+                  consultDiv.classList.add("consultation-item");
+
+                  let profilePic = consultation.consultant_pic || consultation.user_pic || "medconnect_images/blank_profile_pic.png"; // Default pic if null
+
+                  let statusLabel = `<span class="status pending">Pending</span>`;
+                  if (consultation.status === "accepted") {
+                      statusLabel = `<span class="status accepted">Accepted</span>`;
+                  }
+
+                  consultDiv.innerHTML = `
+                      <div class="consultation-card">
+                          <div class="consultation-left">
+                              <img src="${profilePic}" class="profile-pic" alt="Profile Picture">
+                          </div>
+                          <div class="consultation-right">
+                              <p><strong>Name:</strong> ${consultation.consultant_name || consultation.user_name}</p>
+                              <p><strong>Symptoms:</strong> ${consultation.symptoms}</p>
+                              <p><strong>Date:</strong> ${consultation.date} | <strong>Time:</strong> ${consultation.time}</p>
+                              <p><strong>Status:</strong> ${statusLabel}</p>
+                          </div>
+                      </div>
+                  `;
+
+                  // Add event listener if consultation is accepted
+                  if (consultation.status === "accepted") {
+                      consultDiv.classList.add("clickable");
+                      consultDiv.addEventListener("click", () => {
+                          openConsultationWindow(consultation.id);
+                      });
+                  }
+
+                  consultationsContainer.appendChild(consultDiv);
+              });
+
+              document.getElementById("currentConsultationsSection").style.display = "block"; // Show section
+          })
+          .catch(error => console.error("Error fetching consultations:", error));
+  }
 
 </script>
 
