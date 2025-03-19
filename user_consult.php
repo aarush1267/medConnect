@@ -619,6 +619,63 @@ if (!isset($_SESSION['signUpBtn'])) {
             visibility: visible;
         }
 
+        .consultation-card {
+    display: flex;
+    align-items: center;
+    background: white;
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-bottom: 15px;
+    transition: transform 0.2s ease-in-out;
+    cursor: pointer;
+    max-width: 800px;
+    width: 90%;
+    margin-left: auto;
+    margin-right: auto;
+    gap: 2em;
+}
+
+.consultation-card p {
+    margin-bottom: 10px; /* Adjust this value to control spacing */
+}
+
+.consultation-card:hover {
+    transform: scale(1.02);
+}
+
+.consultation-left {
+    flex: 0 0 60px;
+    margin-right: 15px;
+}
+
+.profile-pic {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.consultation-right {
+    flex-grow: 1;
+}
+
+.status {
+    font-weight: bold;
+    padding: 5px 10px;
+    border-radius: 5px;
+}
+
+.status.pending {
+    background-color: #f4c430;
+    color: white;
+}
+
+.status.accepted {
+    background-color: #60a159;
+    color: white;
+}
+
     </style>
 </head>
 <body>
@@ -784,6 +841,12 @@ if (!isset($_SESSION['signUpBtn'])) {
   </div>
 </div>
 
+<!-- Current Consultations Section -->
+
+<div id="currentConsultationsSection" style="display: none;">
+    <div id="currentConsultationsList"></div>
+</div>
+
 <!-- Footer -->
 
 <footer>
@@ -793,7 +856,7 @@ if (!isset($_SESSION['signUpBtn'])) {
       <h3>Need help? Contact us at <br> support@medconnect.com</h3>
       <div style="display: flex; flex-direction: column; gap: 2em;">
         <p><abbr style="cursor: pointer; border-bottom: 1px dashed white;">Terms of Service</abbr> & <abbr style="cursor: pointer; border-bottom: 1px dashed white;"> Privacy Policy</abbr></p>
-        <p>MedConnect © 2023</p>
+        <p>MedConnect © 2025</p>
       </div>
     </div>
     <div class="footer-item footer-2">
@@ -965,6 +1028,70 @@ if (!isset($_SESSION['signUpBtn'])) {
             popup.style.display = "none";
             overlay.style.display = "none";
         }, 300); // Same duration as CSS transition
+    }
+
+    // Current Consultations
+
+    document.addEventListener("DOMContentLoaded", function () {
+      fetchCurrentConsultations();
+    });
+
+    function fetchCurrentConsultations() {
+        fetch("fetch_current_consults.php")
+            .then(response => response.json())
+            .then(data => {
+                const consultationsContainer = document.getElementById("currentConsultationsList");
+                consultationsContainer.innerHTML = ""; // Clear existing entries
+
+                if (data.error) {
+                    consultationsContainer.innerHTML = `<p style="color: red;">${data.error}</p>`;
+                    return;
+                }
+
+                if (data.length === 0) {
+                    consultationsContainer.innerHTML = `<p>No ongoing consultations.</p>`;
+                    return;
+                }
+
+                data.forEach(consultation => {
+                    const consultDiv = document.createElement("div");
+                    consultDiv.classList.add("consultation-item");
+
+                    let profilePic = consultation.consultant_pic || consultation.user_pic || "medconnect_images/blank_profile_pic.png"; // Default pic if null
+
+                    let statusLabel = `<span class="status pending">Pending</span>`;
+                    if (consultation.status === "accepted") {
+                        statusLabel = `<span class="status accepted">Accepted</span>`;
+                    }
+
+                    consultDiv.innerHTML = `
+                        <div class="consultation-card">
+                            <div class="consultation-left">
+                                <img src="${profilePic}" class="profile-pic" alt="Profile Picture">
+                            </div>
+                            <div class="consultation-right">
+                                <p><strong>Name:</strong> ${consultation.consultant_name || consultation.user_name}</p>
+                                <p><strong>Symptoms:</strong> ${consultation.symptoms}</p>
+                                <p><strong>Date:</strong> ${consultation.date} | <strong>Time:</strong> ${consultation.time}</p>
+                                <p><strong>Status:</strong> ${statusLabel}</p>
+                            </div>
+                        </div>
+                    `;
+
+                    // Add event listener if consultation is accepted
+                    if (consultation.status === "accepted") {
+                        consultDiv.classList.add("clickable");
+                        consultDiv.addEventListener("click", () => {
+                            openConsultationWindow(consultation.id);
+                        });
+                    }
+
+                    consultationsContainer.appendChild(consultDiv);
+                });
+
+                document.getElementById("currentConsultationsSection").style.display = "block"; // Show section
+            })
+            .catch(error => console.error("Error fetching consultations:", error));
     }
 
 </script>
