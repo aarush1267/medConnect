@@ -45,14 +45,17 @@ if (!empty($_FILES['medical_docs']['name'])) {
     }
 }
 
-// Insert into Database
+// Insert into Database using Prepared Statements
 $query = "INSERT INTO consultations (user_id, consultant_id, symptoms, details, date, time, notes, medical_docs, status)
-          VALUES ('$user_id', '$consultant_id', '$symptoms', '$details', '$date', '$time', '$notes', '$medical_docs', '$status')";
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-if (mysqli_query($connection, $query)) {
-    echo "Consultation request submitted successfully!";
+$stmt = $connection->prepare($query);
+$stmt->bind_param("iisssssss", $user_id, $consultant_id, $symptoms, $details, $date, $time, $notes, $medical_docs, $status);
+
+if ($stmt->execute()) {
+    echo "Success";
 } else {
-    echo "Error: " . mysqli_error($connection);
+    echo "Error: " . $stmt->error;
 }
 
 // Close Connection
