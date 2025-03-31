@@ -40,14 +40,14 @@ if (!$consultant) {
 }
 
 // Format services properly
-$servicesArray = explode(",", $consultant['services']);
+$servicesArray = explode(",", $consultant['services'] ?? '');
 $formattedServices = array_map(function($service) {
     return ucwords(str_replace('_', ' ', trim($service))); // Converts underscores to spaces and capitalizes
 }, $servicesArray);
 $consultant['services'] = implode(" • ", $formattedServices);
 
 // Format specializations properly
-$specializationsArray = explode(",", $consultant['specializations']);
+$specializationsArray = explode(",", $consultant['specializations'] ?? '');
 $formattedSpecializations = array_map(function($specialization) {
     return ucwords(str_replace('_', ' ', trim($specialization))); // Converts underscores to spaces and capitalizes
 }, $specializationsArray);
@@ -60,7 +60,7 @@ $consultant['specializations'] = implode(" • ", $formattedSpecializations);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars($consultant['name']); ?> | MedConnect</title>
-    <link rel="stylesheet" href="styles.css"> <!-- Ensure styles are properly linked -->
+    <link rel="stylesheet" href="styles.css">
 </head>
 <style media="screen">
 @import url('https://fonts.googleapis.com/css2?family=Lora&display=swap');
@@ -565,8 +565,32 @@ li {
     }
 }
 
+/* Notification Bar */
+.notification-bar {
+    display: none;
+    position: fixed;
+    top: -50px; /* Initially hidden above the screen */
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #60a159; /* Green Background */
+    color: white;
+    padding: 15px 25px;
+    font-size: 18px;
+    font-family: 'Lora', serif;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    transition: top 0.5s ease-in-out;
+    z-index: 1000;
+}
+
+
 </style>
 <body>
+
+  <!-- Notification Bar -->
+<div id="notificationBar" class="notification-bar">
+    Consultation request submitted successfully!
+</div>
 
   <!-- Navigation Bar -->
 
@@ -836,11 +860,41 @@ li {
       })
       .then(response => response.text())
       .then(data => {
-          alert(data);
-          closeConsultForm();
+          if (data.trim() === "Success") {
+              showNotification("Consultation request submitted successfully!", "success");
+              closeConsultForm();
+          } else {
+              showNotification("Error: " + data, "error");
+          }
       })
-      .catch(error => console.error("Error:", error));
+      .catch(error => {
+          showNotification("Something went wrong. Please try again.", "error");
+          console.error("Error:", error);
+      });
   });
+
+  // Function to Show Notification
+  function showNotification(message, type) {
+      const notificationBar = document.getElementById("notificationBar");
+      notificationBar.innerText = message;
+
+      if (type === "success") {
+          notificationBar.style.backgroundColor = "#60a159"; // Green for success
+      } else {
+          notificationBar.style.backgroundColor = "#d9534f"; // Red for error
+      }
+
+      notificationBar.style.top = "20px"; // Slide Down
+      notificationBar.style.display = "block";
+
+      // Hide after 3 seconds
+      setTimeout(() => {
+          notificationBar.style.top = "-50px"; // Slide Up
+          setTimeout(() => {
+              notificationBar.style.display = "none";
+          }, 500);
+      }, 3000);
+  }
 
   </script>
 
