@@ -43,6 +43,7 @@ if(count($errors) == 0) {
 
 if (mysqli_query($connection, $sql)) {
   $_SESSION["signUpBtn"] = "1";
+  $_SESSION["id"] = mysqli_insert_id($connection);
 } else {
   echo "Error: " . $sql . "<br>" . mysqli_error($connection);
 }
