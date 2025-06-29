@@ -1199,7 +1199,7 @@ $_SESSION['profile_pic'] = $profilePic;
         <h3>Need help? Contact us at <br> support@medconnect.com</h3>
         <div style="display: flex; flex-direction: column; gap: 2em;">
           <p><abbr style="cursor: pointer; border-bottom: 1px dashed white;">Terms of Service</abbr> & <abbr style="cursor: pointer; border-bottom: 1px dashed white;"> Privacy Policy</abbr></p>
-          <p>MedConnect © 2023</p>
+          <p>MedConnect © 2025</p>
         </div>
       </div>
       <div class="footer-item footer-2">
