@@ -120,6 +120,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_prescription']
   $stmt = $connection->prepare($insert);
   $stmt->bind_param("iiisssss", $consultation_id, $consultant_id, $user_id, $description, $medication, $dosage, $instructions, $tests);
   $stmt->execute();
+  header("Location: consultant_window.php?consultation_id=$consultation_id&section=prescription");
+  exit;
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_prescription_id'])) {
@@ -128,6 +130,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_prescription_i
     $stmt = $connection->prepare("DELETE FROM consultation_prescriptions WHERE id = ?");
     $stmt->bind_param("i", $prescription_id);
     $stmt->execute();
+    header("Location: consultant_window.php?consultation_id=$consultation_id&section=prescription");
+    exit;
 }
 
 // Notes System PHP
