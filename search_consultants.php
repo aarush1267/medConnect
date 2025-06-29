@@ -1,7 +1,4 @@
 <?php
-// Force display of errors for debugging (Remove in production)
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
 
 // Manually connect to the database
 $servername = "localhost";
