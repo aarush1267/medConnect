@@ -14,9 +14,9 @@ if (!isset($_SESSION['signUpBtn'])) {
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
 <head>
-    <meta charset="utf-8">
-    <title>MedConnect User | Consult</title>
-    <style>
+<meta charset="utf-8">
+<title>MedConnect User | Consult</title>
+<style>
         @import url('https://fonts.googleapis.com/css2?family=Lora&display=swap');
 
         body {
@@ -620,63 +620,63 @@ if (!isset($_SESSION['signUpBtn'])) {
         }
 
         .consultation-card {
-    display: flex;
-    align-items: center;
-    background: white;
-    padding: 15px;
-    border-radius: 10px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    margin-bottom: 15px;
-    transition: transform 0.2s ease-in-out;
-    cursor: pointer;
-    max-width: 800px;
-    width: 90%;
-    margin-left: auto;
-    margin-right: auto;
-    gap: 2em;
-}
+            display: flex;
+            align-items: center;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 15px;
+            transition: transform 0.2s ease-in-out;
+            cursor: pointer;
+            max-width: 800px;
+            width: 90%;
+            margin-left: auto;
+            margin-right: auto;
+            gap: 2em;
+        }
 
-.consultation-card p {
-    margin-bottom: 10px; /* Adjust this value to control spacing */
-}
+        .consultation-card p {
+            margin-bottom: 10px; /* Adjust this value to control spacing */
+        }
 
-.consultation-card:hover {
-    transform: scale(1.02);
-}
+        .consultation-card:hover {
+            transform: scale(1.02);
+        }
 
-.consultation-left {
-    flex: 0 0 60px;
-    margin-right: 15px;
-}
+        .consultation-left {
+            flex: 0 0 60px;
+            margin-right: 15px;
+        }
 
-.profile-pic {
-    width: 120px;
-    height: 120px;
-    border-radius: 50%;
-    object-fit: cover;
-}
+        .profile-pic {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
 
-.consultation-right {
-    flex-grow: 1;
-}
+        .consultation-right {
+            flex-grow: 1;
+        }
 
-.status {
-    font-weight: bold;
-    padding: 5px 10px;
-    border-radius: 5px;
-}
+        .status {
+            font-weight: bold;
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
 
-.status.pending {
-    background-color: #f4c430;
-    color: white;
-}
+        .status.pending {
+            background-color: #f4c430;
+            color: white;
+        }
 
-.status.accepted {
-    background-color: #60a159;
-    color: white;
-}
+        .status.accepted {
+            background-color: #60a159;
+            color: white;
+        }
 
-    </style>
+</style>
 </head>
 <body>
 
