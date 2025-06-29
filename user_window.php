@@ -41,7 +41,6 @@ if (!$consultant) {
 
 $profilePic = !empty($consultant['profile_pic']) ? $consultant['profile_pic'] : 'medconnect_images/blank_profile_pic.png';
 
-
 $user_id = $_SESSION['id'];
 
 // Fetch the consultation data
@@ -50,6 +49,102 @@ $stmt->bind_param("ii", $consultation_id, $user_id);
 $stmt->execute();
 $result = $stmt->get_result();
 $consultation = $result->fetch_assoc();
+
+// Chat System PHP
+
+if (isset($_GET['fetchMessages']) && isset($_GET['consultation_id'])) {
+  $consultation_id = intval($_GET['consultation_id']);
+  $user_id = $_SESSION['id'];
+
+  // Fetch messages with sender profile pic
+  $query = "SELECT cc.*, u.profile_pic
+            FROM consultation_chat cc
+            JOIN users u ON cc.sender_id = u.id
+            WHERE cc.consultation_id = ?
+            ORDER BY cc.sent_at ASC";
+
+  $stmt = $connection->prepare($query);
+  $stmt->bind_param("i", $consultation_id);
+  $stmt->execute();
+  $result = $stmt->get_result();
+
+  while ($msg = $result->fetch_assoc()) {
+    $isSender = $msg['sender_id'] === $user_id;
+    $alignment = $isSender ? 'flex-end' : 'flex-start';
+    $bubble = $isSender ? 'sent' : 'received';
+    $pic = !empty($msg['profile_pic']) ? $msg['profile_pic'] : 'medconnect_images/blank_profile_pic.png';
+
+    echo "<div style='display: flex; justify-content: $alignment; gap: 10px; align-items: flex-end;'>
+            " . (!$isSender ? "<img src='$pic' alt='Profile' style='width: 35px; height: 35px; border-radius: 50%; object-fit: cover;'>" : "") . "
+            <div class='chat-message $bubble'>
+              <p>" . htmlspecialchars($msg['message'], ENT_QUOTES) . "</p>
+              <span class='timestamp'>" . date("Y-m-d H:i", strtotime($msg['sent_at'])) . "</span>
+            </div>
+            " . ($isSender ? "<img src='$pic' alt='Profile' style='width: 35px; height: 35px; border-radius: 50%; object-fit: cover;'>" : "") . "
+          </div>";
+  }
+  exit;
+}
+
+// Handle new message POST
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['message'])) {
+  $msg = $_POST['message'];
+  $sender_id = intval($_POST['sender_id']);
+  $receiver_id = intval($_POST['receiver_id']);
+  $consult_id = intval($_POST['consultation_id']);
+
+  $stmt = $connection->prepare("INSERT INTO consultation_chat (consultation_id, sender_id, receiver_id, message) VALUES (?, ?, ?, ?)");
+  $stmt->bind_param("iiis", $consult_id, $sender_id, $receiver_id, $msg);
+  $stmt->execute();
+
+  // header("Location: user_window.php?consultation_id=$consult_id&section=chat");
+  exit;
+}
+
+// Prescription System PHP
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['download_prescriptions_pdf'])) {
+    require('fpdf.php');
+
+    $consultation_id = intval($_GET['consultation_id']);
+    $query = "SELECT * FROM consultation_prescriptions WHERE consultation_id = ? ORDER BY issued_at DESC";
+    $stmt = $connection->prepare($query);
+    $stmt->bind_param("i", $consultation_id);
+    $stmt->execute();
+    $prescriptions_result = $stmt->get_result();
+
+    $pdf = new FPDF();
+    $pdf->AddPage();
+    $pdf->SetFont('Arial','B',16);
+    $pdf->Cell(0,10,'MedConnect - Prescription',0,1,'C');
+    $pdf->Ln(5);
+
+    $pdf->SetFont('Arial','',12);
+
+    if ($prescriptions_result->num_rows > 0) {
+        while ($prescription = $prescriptions_result->fetch_assoc()) {
+            $pdf->MultiCell(0,8,"Issue: " . $prescription['description']);
+            $pdf->MultiCell(0,8,"Medication: " . $prescription['medication']);
+            $pdf->MultiCell(0,8,"Dosage: " . $prescription['dosage']);
+            if (!empty($prescription['instructions'])) {
+                $pdf->MultiCell(0,8,"Instructions: " . $prescription['instructions']);
+            }
+            if (!empty($prescription['tests'])) {
+                $pdf->MultiCell(0,8,"Tests: " . $prescription['tests']);
+            }
+            $pdf->MultiCell(0,8,"Issued: " . date("F j, Y, g:i a", strtotime($prescription['issued_at'])));
+            $pdf->Ln(5);
+            $pdf->Cell(0,0,'','T');
+            $pdf->Ln(5);
+        }
+    } else {
+        $pdf->Cell(0,10,'No prescriptions found for this consultation.',0,1,'C');
+    }
+
+    $pdf->Output('D', 'MedConnect_Prescriptions.pdf');
+    exit;
+}
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -358,6 +453,162 @@ li {
    margin-top: 50px;
  }
 
+ .chat-box {
+  max-width: 600px;
+  margin: 0 auto;
+  background-color: #f3e5d3;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  font-family: 'Lora', serif;
+}
+
+.chat-messages {
+  max-height: 300px;
+  overflow-y: auto;
+  margin-bottom: 20px;
+  padding-right: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+.chat-message {
+  max-width: 60%;
+  padding: 8px 12px;
+  border-radius: 10px;
+  position: relative;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.chat-message.sent {
+  align-self: flex-end;
+  background-color: #5fa159;
+  color: white;
+}
+
+.chat-message.received {
+  align-self: flex-start;
+  background-color: #ffffff;
+  color: #333;
+  border: 1px solid #ddd;
+}
+
+.timestamp {
+  font-size: 12px;
+  color: black;
+  margin-top: 3px;
+  font-family: 'Lora', serif;
+}
+
+.chat-form {
+  display: flex;
+  gap: 10px;
+}
+
+.chat-form input[type="text"] {
+  flex: 1;
+  padding: 12px;
+  font-size: 15px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-family: 'Lora', serif;
+  outline: none;
+}
+
+.chat-form button {
+  background-color: #5fa159;
+  color: white;
+  padding: 12px 20px;
+  border: none;
+  font-weight: bold;
+  border-radius: 5px;
+  cursor: pointer;
+  font-family: 'Lora', serif;
+}
+
+.chat-form button:hover {
+  background-color: #4e8a45;
+}
+
+.prescription-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 30px;
+}
+
+.prescription-item {
+  width: 550px;
+  margin: 0 auto;
+  background: linear-gradient(135deg, #fdf6ee 0%, #f8e8d1 100%);
+  border-left: 8px solid #60a159;
+  border-radius: 12px;
+  padding: 20px 24px;
+  box-shadow: 0 6px 12px rgba(0,0,0,0.08);
+  font-family: 'Lora', serif;
+  color: #4e3c29;
+  position: relative;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.prescription-item:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 18px rgba(0,0,0,0.12);
+}
+
+.prescription-item p {
+  margin: 10px 0;
+  line-height: 1.5;
+}
+
+.prescription-item strong {
+  color: #3a2e20;
+}
+
+.issued-date {
+  font-size: 13px;
+  color: #7c6651;
+  margin-top: 12px;
+  font-style: italic;
+}
+
+.prescription-title {
+  display: block;
+  text-align: center;
+  color: #5a3e2b;
+  margin-bottom: 25px;
+  font-size: 26px;
+  font-weight: bold;
+}
+
+.no-prescriptions {
+  text-align: center;
+  color: #7c6651;
+  margin-top: 20px;
+  font-style: italic;
+}
+
+.download-pdf-btn {
+    background-color: #60a159;
+    color: white;
+    padding: 10px 18px;
+    font-size: 15px;
+    font-weight: bold;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    margin: 30px auto 10px;
+    display: block;
+    font-family: 'Lora', serif;
+}
+
+.download-pdf-btn:hover {
+    background-color: #4e8a45;
+}
+
 </style>
 <body>
   <!-- Navbar -->
@@ -433,11 +684,92 @@ li {
   </div>
 
   <div id="chatSection" class="consult-window-section" style="display: none;">
-    <!-- Chat content goes here -->
+    <?php
+    // Load chat messages
+    $chatQuery = "SELECT cc.*, u.profile_pic
+                  FROM consultation_chat cc
+                  JOIN users u ON cc.sender_id = u.id
+                  WHERE cc.consultation_id = $consultation_id
+                  ORDER BY cc.sent_at ASC";
+    $chatResult = mysqli_query($connection, $chatQuery);
+
+    // Fetch user (patient) profile pic
+    $userResult = mysqli_query($connection, "SELECT profile_pic FROM users WHERE id = $user_id");
+    $userData = mysqli_fetch_assoc($userResult);
+    $patientPic = !empty($userData['profile_pic']) ? $userData['profile_pic'] : 'medconnect_images/blank_profile_pic.png';
+
+    // Consultant pic already fetched as $profilePic
+    ?>
+
+    <div class="chat-box">
+      <div class="chat-messages" id="chatMessages">
+        <?php while ($chat = mysqli_fetch_assoc($chatResult)): ?>
+          <?php
+            $isSender = $chat['sender_id'] == $_SESSION['id'];
+            $pic = !empty($chat['profile_pic']) ? $chat['profile_pic'] : 'medconnect_images/blank_profile_pic.png';
+            $alignment = $isSender ? 'flex-end' : 'flex-start';
+            $bubble = $isSender ? 'sent' : 'received';
+          ?>
+          <div style="display: flex; justify-content: <?= $alignment ?>; gap: 10px;">
+            <?php if (!$isSender): ?>
+              <img src="<?= $pic ?>" alt="Profile" style="width: 35px; height: 35px; border-radius: 50%; object-fit: cover;">
+            <?php endif; ?>
+            <div class="chat-message <?= $bubble ?>">
+              <p><?= htmlspecialchars($chat['message'], ENT_QUOTES) ?></p>
+            </div>
+            <?php if ($isSender): ?>
+              <img src="<?= $pic ?>" alt="Profile" style="width: 35px; height: 35px; border-radius: 50%; object-fit: cover;">
+            <?php endif; ?>
+            <span class="timestamp"><?= date("H:i", strtotime($chat['sent_at'])) ?></span>
+          </div>
+        <?php endwhile; ?>
+      </div>
+
+      <form method="POST" class="chat-form" id="chatForm">
+        <input type="hidden" name="consultation_id" value="<?= $consultation_id ?>">
+        <input type="hidden" name="sender_id" value="<?= $_SESSION['id'] ?>">
+        <input type="hidden" name="receiver_id" value="<?= $consultant['id'] ?>">
+        <input type="text" id="messageInput" name="message" placeholder="Type your message..." required autocomplete="off">
+        <button type="submit">Send</button>
+      </form>
+    </div>
   </div>
 
   <div id="prescriptionSection" class="consult-window-section" style="display: none;">
-    <!-- Prescription content goes here -->
+    <?php
+      $consultation_id = intval($_GET['consultation_id']);
+      $query = "SELECT * FROM consultation_prescriptions WHERE consultation_id = ? ORDER BY issued_at DESC";
+      $stmt = $connection->prepare($query);
+      $stmt->bind_param("i", $consultation_id);
+      $stmt->execute();
+      $prescriptions_result = $stmt->get_result();
+
+      if ($prescriptions_result->num_rows > 0):
+    ?>
+      <h2 class="prescription-title">📄 Your Prescriptions</h2>
+      <div class="prescription-list">
+        <?php while ($prescription = $prescriptions_result->fetch_assoc()): ?>
+          <div class="prescription-item">
+            <p><strong>🩺 Issue:</strong> <?= htmlspecialchars($prescription['description']) ?></p>
+            <p><strong>💊 Medication:</strong> <?= htmlspecialchars($prescription['medication']) ?></p>
+            <p><strong>⏱ Dosage:</strong> <?= htmlspecialchars($prescription['dosage']) ?></p>
+            <?php if (!empty($prescription['instructions'])): ?>
+              <p><strong>📝 Instructions:</strong> <?= htmlspecialchars($prescription['instructions']) ?></p>
+            <?php endif; ?>
+            <?php if (!empty($prescription['tests'])): ?>
+              <p><strong>🧪 Tests:</strong> <?= htmlspecialchars($prescription['tests']) ?></p>
+            <?php endif; ?>
+            <p class="issued-date">🗓 Issued: <?= date("F j, Y, g:i a", strtotime($prescription['issued_at'])) ?></p>
+
+            <form method="POST">
+              <button type="submit" name="download_prescriptions_pdf" class="download-pdf-btn">Download as PDF</button>
+            </form>
+          </div>
+        <?php endwhile; ?>
+      </div>
+    <?php else: ?>
+      <p class="no-prescriptions">No prescriptions issued yet for this consultation.</p>
+    <?php endif; ?>
   </div>
 
   <div id="reviewsSection" class="consult-window-section" style="display: none;">
@@ -493,6 +825,61 @@ li {
     // Show selected section
     document.getElementById(`${section}Section`).style.display = 'block';
   }
+
+  // Chat Section
+
+  document.addEventListener("DOMContentLoaded", function () {
+    const chatBox = document.getElementById("chatMessages");
+    if (chatBox) {
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    // Check URL for section=chat to auto-toggle
+    const params = new URLSearchParams(window.location.search);
+    const section = params.get("section");
+
+    if (section) {
+      toggleWindowSection(section);
+    }
+  });
+
+  function loadChatMessages() {
+    const consultationId = <?= $consultation_id ?>;
+
+    const xhr = new XMLHttpRequest();
+    xhr.open("GET", `?fetchMessages=1&consultation_id=${consultationId}`, true);
+    xhr.onload = function () {
+      if (xhr.status === 200) {
+        document.getElementById("chatMessages").innerHTML = xhr.responseText;
+        // Scroll to bottom after loading
+        const chatBox = document.getElementById("chatMessages");
+        chatBox.scrollTop = chatBox.scrollHeight;
+      }
+    };
+    xhr.send();
+  }
+
+  // Load every 3 seconds
+  setInterval(loadChatMessages, 3000);
+
+  // Initial load
+  loadChatMessages();
+
+  document.getElementById("chatForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+
+    const formData = new FormData(this);
+
+    fetch("", {
+        method: "POST",
+        body: formData
+    })
+    .then(() => {
+        loadChatMessages();  // Reload chat messages only
+        document.getElementById("messageInput").value = "";  // Clear input
+    })
+    .catch(error => console.error("Error:", error));
+  });
 
   </script>
 
