@@ -30,7 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['logInEmail'], $_POST[
             $_SESSION['signUpBtn'] = true;
             $_SESSION['signUpName'] = $row['name'];
             $_SESSION['signUpEmail'] = $row['email'];
-            $_SESSION['signUpPassword'] = $password; // Store only if necessary
+            $_SESSION['signUpPassword'] = $password;
             $_SESSION['role'] = $row['role'];
             $_SESSION['id'] = $row['id'];
 
