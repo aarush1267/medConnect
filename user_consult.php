@@ -843,8 +843,14 @@ if (!isset($_SESSION['signUpBtn'])) {
 
 <!-- Current Consultations Section -->
 
-<div id="currentConsultationsSection" style="display: none;">
+<div id="currentConsultationsSection">
     <div id="currentConsultationsList"></div>
+</div>
+
+<!-- Previous Consultations Section -->
+
+<div id="previousConsultationsSection">
+    <h1>Test</h1>
 </div>
 
 <!-- Footer -->
@@ -890,8 +896,13 @@ if (!isset($_SESSION['signUpBtn'])) {
         // Show/hide search bar based on section
         document.getElementById('search-bar-container').style.display = section === 'find' ? 'flex' : 'none';
 
-        // Show "How It Works" & "Testimonials" only in "Find a Consult"
         document.getElementById('findConsultSection').style.display = section === 'find' ? 'block' : 'none';
+        document.getElementById('currentConsultationsSection').style.display = section === 'current' ? 'block' : 'none';
+        document.getElementById('previousConsultationsSection').style.display = section === 'previous' ? 'block' : 'none';
+
+        if (section === 'current') {
+          fetchCurrentConsultations();
+        }
     }
 
     // Set default section to 'Find a Consult'
@@ -1032,10 +1043,6 @@ if (!isset($_SESSION['signUpBtn'])) {
 
     // Current Consultations
 
-    document.addEventListener("DOMContentLoaded", function () {
-      fetchCurrentConsultations();
-    });
-
     function fetchCurrentConsultations() {
         fetch("fetch_current_consults.php")
             .then(response => response.json())
@@ -1062,6 +1069,9 @@ if (!isset($_SESSION['signUpBtn'])) {
                     let statusLabel = `<span class="status pending">Pending</span>`;
                     if (consultation.status === "accepted") {
                         statusLabel = `<span class="status accepted">Accepted</span>`;
+
+                        consultDiv.classList.add("clickable");
+                        consultDiv.setAttribute("onclick", `window.location.href='user_window.php?consultation_id=${consultation.id}'`);
                     }
 
                     consultDiv.innerHTML = `
@@ -1070,21 +1080,13 @@ if (!isset($_SESSION['signUpBtn'])) {
                                 <img src="${profilePic}" class="profile-pic" alt="Profile Picture">
                             </div>
                             <div class="consultation-right">
-                                <p><strong>Name:</strong> ${consultation.consultant_name || consultation.user_name}</p>
+                                <p><strong>Consultant Name:</strong> ${consultation.consultant_name || consultation.user_name}</p>
                                 <p><strong>Symptoms:</strong> ${consultation.symptoms}</p>
                                 <p><strong>Date:</strong> ${consultation.date} | <strong>Time:</strong> ${consultation.time}</p>
                                 <p><strong>Status:</strong> ${statusLabel}</p>
                             </div>
                         </div>
                     `;
-
-                    // Add event listener if consultation is accepted
-                    if (consultation.status === "accepted") {
-                        consultDiv.classList.add("clickable");
-                        consultDiv.addEventListener("click", () => {
-                            openConsultationWindow(consultation.id);
-                        });
-                    }
 
                     consultationsContainer.appendChild(consultDiv);
                 });
