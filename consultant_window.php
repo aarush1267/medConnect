@@ -587,10 +587,15 @@ li {
   cursor: pointer;
   transition: background 0.2s ease;
   font-family: Lora;
+  box-shadow: 0 1px 1px black;
 }
 
 .prescription-form button:hover {
   background-color: #4e8a45;
+}
+
+.prescription-form button:active {
+  box-shadow: none;
 }
 
 .prescription-form input[type="text"],
@@ -744,10 +749,15 @@ li {
   cursor: pointer;
   transition: background 0.2s ease;
   font-family: Lora;
+  box-shadow: 0 1px 1px black;
 }
 
 .note-form button:hover {
   background-color: #4e8a45;
+}
+
+.note-form button:active {
+  box-shadow: none;
 }
 
 .note-list-container {
@@ -835,7 +845,9 @@ li {
       <img src="<?php echo htmlspecialchars($profilePic); ?>" class="profile-img" alt="User Picture">
     </div>
     <div class="profile-info">
-      <h1 class="consultant-name"><?php echo htmlspecialchars($user['name']); ?></h1>
+      <h1 onclick="location.href='view_user.php?id=<?php echo $user['id']; ?>'" class="consultant-name">
+        <?php echo htmlspecialchars($user['name']); ?>
+      </h1>
       <p class="profile-subtext">
         <i class="fas fa-user"></i> <?php echo $user['age'] ?? 'Not Listed'; ?> •
         <i class="fas fa-venus-mars"></i> <?php echo htmlspecialchars($user['gender'] ?? 'Not Listed'); ?> •
