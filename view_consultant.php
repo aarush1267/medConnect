@@ -53,6 +53,30 @@ $formattedSpecializations = array_map(function($specialization) {
 }, $specializationsArray);
 $consultant['specializations'] = implode(" • ", $formattedSpecializations);
 
+// Reviews & Stats
+
+// Count accepted consultations
+$consultations_stmt = $connection->prepare("SELECT COUNT(*) AS total_consults FROM consultations WHERE consultant_id = ? AND status = 'accepted'");
+$consultations_stmt->bind_param("i", $consultant_id);
+$consultations_stmt->execute();
+$consultations_result = $consultations_stmt->get_result();
+$total_consults = $consultations_result->fetch_assoc()['total_consults'] ?? 0;
+
+// Count recommendations
+$recommend_stmt = $connection->prepare("SELECT recommend, COUNT(*) as count FROM consultation_reviews WHERE consultant_id = ? GROUP BY recommend");
+$recommend_stmt->bind_param("i", $consultant_id);
+$recommend_stmt->execute();
+$recommend_result = $recommend_stmt->get_result();
+$recommend_yes = 0;
+$recommend_no = 0;
+while ($row = $recommend_result->fetch_assoc()) {
+    if ($row['recommend'] === "Yes") {
+        $recommend_yes = $row['count'];
+    } elseif ($row['recommend'] === "No") {
+        $recommend_no = $row['count'];
+    }
+}
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -583,6 +607,138 @@ li {
     z-index: 1000;
 }
 
+.consultant-stats-section {
+    display: flex;
+    justify-content: center;
+    gap: 50px;
+    background: #fdf6ee;
+    padding: 30px 20px;
+    border-radius: 12px;
+    max-width: 1000px;
+    margin: 0 auto 30px auto;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+    font-family: 'Lora', serif;
+}
+
+.consultant-stats-box {
+    text-align: center;
+    flex: 1;
+    padding: 20px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    transition: transform 0.2s ease;
+}
+
+.consultant-stats-box:hover {
+    transform: translateY(-5px);
+}
+
+.stats-icon {
+    font-size: 28px;
+    color: #5FA159;
+    margin-bottom: 10px;
+}
+
+.consultant-stats-box h3 {
+    font-size: 18px;
+    color: #5A3E2B;
+    margin-bottom: 8px;
+}
+
+.consultant-stats-box p {
+    font-size: 20px;
+    color: #4e3c29;
+    font-weight: bold;
+}
+
+.view-reviews-btn {
+    background-color: #60a159;
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    font-family: 'Lora', serif;
+    transition: background 0.2s ease;
+    box-shadow: 0 1px 1px black;
+}
+
+.view-reviews-btn:hover {
+    background-color: #4e8a45;
+}
+
+.view-reviews-btn:active {
+  box-shadow: none;
+}
+
+.review-card {
+    background: linear-gradient(to bottom right, #fdf6ee, #f8e8d1);
+    border-left: 6px solid #5FA159;
+    border-radius: 14px;
+    padding: 15px 20px;
+    max-width: 500px;
+    margin: 15px auto;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.07);
+    font-family: 'Lora', serif;
+    transition: transform 0.2s ease;
+}
+
+.review-card h3 {
+    font-size: 20px;
+    color: #4e3c29;
+    margin: 10px 0 8px 0;
+}
+
+.review-card p {
+    font-size: 15px;
+    color: #5a3e2b;
+    margin: 6px 0;
+}
+
+.review-date {
+    font-size: 12px;
+    color: #7c6651;
+    font-style: italic;
+    float: right;
+}
+
+.review-patient {
+    font-size: 14px;
+    color: #5a3e2b;
+    margin-top: 5px;
+}
+
+.star-display {
+    display: flex;
+    gap: 2px;
+    font-size: 18px;
+    margin-bottom: 6px;
+}
+
+.star-display .star {
+    color: #ccc;
+}
+
+.star-display .star.filled {
+    color: #f7c948;
+}
+
+.reviews-list {
+    max-height: 500px;
+    overflow-y: auto;
+    padding-right: 8px;
+}
+
+.consultant-stats-title {
+    text-align: center;
+    font-size: 35px;
+    font-weight: bold;
+    color: #5A3E2B;
+    margin-top: 80px;
+    margin-bottom: 30px;
+}
 
 </style>
 <body>
@@ -693,6 +849,78 @@ li {
             <div class="info-icon"><i class="fas fa-user-md"></i></div>
             <h2>Specializations</h2>
             <p><?php echo !empty($consultant['specializations']) ? htmlspecialchars($consultant['specializations']) : "Not listed"; ?></p>
+        </div>
+      </div>
+    </div>
+
+    <h1 class="consultant-stats-title">Consultant Stats</h1>
+
+    <div class="consultant-stats-section">
+      <div class="consultant-stats-box">
+        <i class="fas fa-calendar-check stats-icon"></i>
+        <h3>Consultations Completed</h3>
+        <p><?= $total_consults ?></p>
+      </div>
+      <div class="consultant-stats-box">
+        <i class="fas fa-users stats-icon"></i>
+        <h3>Recommendations</h3>
+        <p>
+          <i class="fas fa-thumbs-up" style="color: #5FA159; margin-right: 6px;"></i><?= $recommend_yes ?>
+          &nbsp;|&nbsp;
+          <i class="fas fa-thumbs-down" style="color: #d9534f; margin: 0 6px;"></i><?= $recommend_no ?>
+        </p>
+      </div>
+      <div class="consultant-stats-box">
+        <i class="fas fa-star stats-icon"></i>
+        <h3>Patient Reviews</h3>
+        <button class="view-reviews-btn" onclick="openReviewsPopup()">View Reviews</button>
+      </div>
+    </div>
+
+    <!-- Reviews Popup -->
+    <div id="reviewsPopupOverlay" class="popup-overlay" onclick="closeReviewsPopup()"></div>
+    <div id="reviewsPopup" class="popup">
+      <div class="popup-content">
+        <span class="close-btn" onclick="closeReviewsPopup()">&times;</span>
+        <h2>Reviews for Dr. <?= htmlspecialchars($consultant['name']) ?></h2>
+        <div class="reviews-list">
+          <?php
+          $reviews_stmt = $connection->prepare("
+              SELECT cr.*, u.name AS patient_name
+              FROM consultation_reviews cr
+              JOIN users u ON cr.user_id = u.id
+              WHERE cr.consultant_id = ?
+              ORDER BY cr.created_at DESC
+          ");
+          $reviews_stmt->bind_param("i", $consultant_id);
+          $reviews_stmt->execute();
+          $reviews_result = $reviews_stmt->get_result();
+
+          if ($reviews_result->num_rows > 0):
+              while ($review = $reviews_result->fetch_assoc()):
+          ?>
+              <div class="review-card">
+                <div class="review-header">
+                  <div class="star-display">
+                    <?php
+                      $filled = intval($review['rating']);
+                      $empty = 5 - $filled;
+                      for ($i = 0; $i < $filled; $i++) echo '<span class="star filled">&#9733;</span>';
+                      for ($i = 0; $i < $empty; $i++) echo '<span class="star">&#9733;</span>';
+                    ?>
+                  </div>
+                  <span class="review-date"><?= date("F j, Y", strtotime($review['created_at'])) ?></span>
+                </div>
+                <h3><?= htmlspecialchars($review['review_title']) ?></h3>
+                <p><?= nl2br(htmlspecialchars($review['review_body'])) ?></p>
+                <p class="review-patient">👤 <?= htmlspecialchars($review['patient_name']) ?></p>
+              </div>
+          <?php
+              endwhile;
+          else:
+              echo "<p>No reviews have been submitted for this consultant yet.</p>";
+          endif;
+          ?>
         </div>
       </div>
     </div>
@@ -894,6 +1122,28 @@ li {
               notificationBar.style.display = "none";
           }, 500);
       }, 3000);
+  }
+
+  function openReviewsPopup() {
+    const popup = document.getElementById("reviewsPopup");
+    const overlay = document.getElementById("reviewsPopupOverlay");
+    popup.style.display = "block";
+    overlay.style.display = "block";
+    setTimeout(() => {
+        popup.classList.add("show");
+        overlay.classList.add("show");
+    }, 10);
+  }
+
+  function closeReviewsPopup() {
+      const popup = document.getElementById("reviewsPopup");
+      const overlay = document.getElementById("reviewsPopupOverlay");
+      popup.classList.remove("show");
+      overlay.classList.remove("show");
+      setTimeout(() => {
+          popup.style.display = "none";
+          overlay.style.display = "none";
+      }, 300);
   }
 
   </script>
