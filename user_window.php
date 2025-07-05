@@ -69,7 +69,7 @@ if (isset($_GET['fetchMessages']) && isset($_GET['consultation_id'])) {
   $result = $stmt->get_result();
 
   while ($msg = $result->fetch_assoc()) {
-    $isSender = $msg['sender_id'] === $user_id;
+    $isSender = $msg['sender_id'] == $user_id;
     $alignment = $isSender ? 'flex-end' : 'flex-start';
     $bubble = $isSender ? 'sent' : 'received';
     $pic = !empty($msg['profile_pic']) ? $msg['profile_pic'] : 'medconnect_images/blank_profile_pic.png';
@@ -142,6 +142,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['download_prescription
     }
 
     $pdf->Output('D', 'MedConnect_Prescriptions.pdf');
+    exit;
+}
+
+// Review System PHP
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_review'])) {
+    $consultation_id = intval($_GET['consultation_id']);
+    $consultant_id = $consultant['id'];
+    $user_id = $_SESSION['id'];
+    $rating = isset($_POST['rating']) ? intval($_POST['rating']) : 0;
+
+    if ($rating < 1 || $rating > 5) {
+        echo "<script>alert('Please select a star rating before submitting your review.'); window.history.back();</script>";
+        exit;
+    }
+
+    $review_title = mysqli_real_escape_string($connection, $_POST['review_title']);
+    $review_body = mysqli_real_escape_string($connection, $_POST['review_body']);
+
+    $check_stmt = $connection->prepare("SELECT id FROM consultation_reviews WHERE consultation_id = ? AND user_id = ?");
+    $check_stmt->bind_param("ii", $consultation_id, $user_id);
+    $check_stmt->execute();
+    $check_result = $check_stmt->get_result();
+
+    if ($check_result->num_rows > 0) {
+        $existing_review = $check_result->fetch_assoc();
+        $stmt = $connection->prepare("UPDATE consultation_reviews SET rating = ?, review_title = ?, review_body = ? WHERE id = ?");
+        $stmt->bind_param("issi", $rating, $review_title, $review_body, $existing_review['id']);
+    } else {
+        $stmt = $connection->prepare("INSERT INTO consultation_reviews (consultation_id, consultant_id, user_id, rating, review_title, review_body) VALUES (?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("iiiiss", $consultation_id, $consultant_id, $user_id, $rating, $review_title, $review_body);
+    }
+    $stmt->execute();
+    header("Location: user_window.php?consultation_id=$consultation_id&section=reviews");
+    exit;
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_review_id'])) {
+    $review_id = intval($_POST['delete_review_id']);
+    $stmt = $connection->prepare("DELETE FROM consultation_reviews WHERE id = ?");
+    $stmt->bind_param("i", $review_id);
+    $stmt->execute();
+    header("Location: user_window.php?consultation_id=$consultation_id&section=reviews");
     exit;
 }
 
@@ -609,6 +652,284 @@ li {
     background-color: #4e8a45;
 }
 
+.review-container {
+  display: flex;
+  gap: 20px;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.review-form-container, .review-display-container {
+  flex: 1;
+  background: #fdf6ee;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+  height: fit-content;
+}
+
+.review-form h2, .review-display-container h2 {
+  text-align: center;
+  color: #5a3e2b;
+  margin-bottom: 15px;
+}
+
+.review-form label {
+  display: block;
+  margin-top: 12px;
+  font-weight: bold;
+  color: #5a3e2b;
+}
+
+.review-form input[type="text"],
+.review-form textarea,
+.review-form select {
+  width: 100%;
+  padding: 12px;
+  margin-top: 8px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-family: 'Lora', serif;
+  background: #fffdf9;
+}
+
+.review-form button {
+  display: block;
+  margin: 20px auto 0;
+  background-color: #60a159;
+  color: white;
+  padding: 12px 20px;
+  font-weight: bold;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.review-form button:hover {
+  background-color: #4e8a45;
+}
+
+.review-card {
+  background: linear-gradient(135deg, #fdf6ee, #f8e8d1);
+  border-left: 6px solid #60a159;
+  border-radius: 10px;
+  padding: 15px 18px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.review-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.08);
+}
+
+.review-card h3 {
+  margin: 10px 0;
+  color: #4e3c29;
+}
+
+.review-card p {
+  margin: 0 0 8px 0;
+  color: #5a3e2b;
+}
+
+.review-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.review-stars {
+  color: #f7c948;
+  font-size: 18px;
+}
+
+.review-date {
+  font-size: 13px;
+  color: #7c6651;
+  font-style: italic;
+}
+
+.delete-review-btn {
+  background-color: #d9534f;
+  color: white;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  margin-top: 10px;
+  font-family: Lora;
+  box-shadow: 0 1px 1px black;
+}
+
+.edit-review-btn {
+  background-color: #5FA159;
+  color: white;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  margin-top: 10px;
+  font-family: Lora;
+  box-shadow: 0 1px 1px black;
+}
+
+.delete-review-btn:active,
+.edit-review-btn:active {
+  box-shadow: none;
+}
+
+.review-action-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 1em;
+}
+
+.review-form-container {
+  background: #fdf6ee;
+  padding: 30px;
+  border-radius: 14px;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.06);
+  max-width: 500px;
+  margin: 0 auto;
+  font-family: 'Lora', serif;
+}
+
+.review-form-container h2 {
+  text-align: center;
+  color: #5a3e2b;
+  margin-bottom: 20px;
+  font-size: 22px;
+}
+
+.review-form label {
+  display: block;
+  margin-top: 16px;
+  font-weight: bold;
+  color: #5a3e2b;
+}
+
+.review-form input[type="text"],
+.review-form textarea {
+  width: 100%;
+  padding: 12px;
+  margin-top: 8px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-family: 'Lora', serif;
+  background: #fffdf9;
+  transition: border 0.2s ease;
+  resize: none;
+}
+
+.review-form input[type="text"]:focus,
+.review-form textarea:focus {
+  border: 1px solid #614124;
+  outline: none;
+}
+
+.rating-block,
+.recommend-toggle {
+  margin-top: 16px;
+}
+
+.rating-options,
+.recommend-options {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.rating-options label,
+.recommend-options label {
+  background: #f8e8d1;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  font-size: 14px;
+}
+
+.rating-options label:hover,
+.recommend-options label:hover {
+  background: #e5d4bb;
+}
+
+.review-form button {
+  font-family: Lora;
+  box-shadow: 0 1px 1px black;
+  display: block;
+  width: 100%;
+  margin-top: 24px;
+  background-color: #60a159;
+  color: white;
+  padding: 14px;
+  font-weight: bold;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background 0.2s ease;
+}
+
+.review-form button:hover {
+  background-color: #4e8a45;
+}
+
+.review-form button:active {
+  box-shadow: none;
+}
+
+.star-rating {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  font-size: 30px;
+  cursor: pointer;
+  margin-top: 10px;
+  justify-content: center;
+}
+
+.star {
+  color: #ccc;
+  transition: color 0.2s ease;
+}
+
+.star.hover,
+.star.selected {
+  color: #f7c948;
+}
+
+.recommend-options {
+  justify-content: center;
+}
+
+.star-display {
+    display: flex;
+    gap: 5px;
+    justify-content: center;
+    font-size: 28px;
+}
+
+.star-display .star {
+    color: #ccc; /* unfilled star color */
+}
+
+.star-display .star.filled {
+    color: #f7c948; /* filled star color */
+}
+
+.review-form-highlight {
+    border: 1px solid #614124 !important;
+}
+
 </style>
 <body>
   <!-- Navbar -->
@@ -634,7 +955,7 @@ li {
       <img src="<?php echo htmlspecialchars($profilePic); ?>" class="profile-img" alt="Consultant Picture">
     </div>
     <div class="profile-info">
-      <h1 class="consultant-name"><?php echo htmlspecialchars($consultant['name']); ?></h1>
+      <h1 onclick="location.href='view_consultant.php?id=<?php echo $consultant['id']; ?>'" class="consultant-name"><?php echo htmlspecialchars($consultant['name']); ?></h1>
       <p class="profile-subtext">
         <i class="fas fa-user"></i> <?php echo $consultant['age'] ?? 'Not Listed'; ?> •
         <i class="fas fa-venus-mars"></i> <?php echo htmlspecialchars($consultant['gender'] ?? 'Not Listed'); ?> •
@@ -773,7 +1094,90 @@ li {
   </div>
 
   <div id="reviewsSection" class="consult-window-section" style="display: none;">
-    <!-- Reviews content goes here -->
+    <div class="review-container">
+
+      <!-- Review Submission -->
+      <div class="review-form-container">
+        <h2>Share Your Consultation Experience</h2>
+        <form method="POST" class="review-form">
+
+          <!-- Rating Block -->
+          <div class="star-rating-block">
+            <label>Rate Your Experience</label>
+            <div class="star-rating">
+              <span class="star" data-value="1">&#9733;</span>
+              <span class="star" data-value="2">&#9733;</span>
+              <span class="star" data-value="3">&#9733;</span>
+              <span class="star" data-value="4">&#9733;</span>
+              <span class="star" data-value="5">&#9733;</span>
+            </div>
+            <input type="hidden" name="rating" id="ratingInput" required>
+          </div>
+
+          <!-- Title -->
+          <label for="review_title">Title</label>
+          <input type="text" name="review_title" required>
+
+          <!-- Recommendation Toggle -->
+          <div class="recommend-toggle">
+            <label>Would you recommend this consultant?</label>
+            <div class="recommend-options">
+              <label><input type="radio" name="recommend" value="Yes" required> Yes</label>
+              <label><input type="radio" name="recommend" value="No"> No</label>
+            </div>
+          </div>
+
+          <!-- Review Body -->
+          <label for="review_body">Your Review</label>
+          <textarea name="review_body" rows="5" required placeholder="Write about your experience..."></textarea>
+
+          <!-- Submit -->
+          <button type="submit" name="submit_review">Submit Review</button>
+        </form>
+      </div>
+
+      <!-- Display User's Review -->
+      <div class="review-display-container">
+        <h2>Your Review</h2>
+        <?php
+        $query = "SELECT * FROM consultation_reviews WHERE consultation_id = ? AND user_id = ?";
+        $stmt = $connection->prepare($query);
+        $stmt->bind_param("ii", $consultation_id, $_SESSION['id']);
+        $stmt->execute();
+        $review_result = $stmt->get_result();
+
+        if ($review_result->num_rows > 0):
+            $review = $review_result->fetch_assoc();
+        ?>
+          <div class="review-card">
+            <div class="review-header">
+              <div class="star-display">
+                  <?php
+                  $filled = intval($review['rating']);
+                  $empty = 5 - $filled;
+                  for ($i = 0; $i < $filled; $i++) echo '<span class="star filled">&#9733;</span>';
+                  for ($i = 0; $i < $empty; $i++) echo '<span class="star">&#9733;</span>';
+                  ?>
+              </div>
+              <span class="review-date"><?= date("F j, Y, g:i a", strtotime($review['created_at'])) ?></span>
+            </div>
+            <h3><?= htmlspecialchars($review['review_title']) ?></h3>
+            <p><?= nl2br(htmlspecialchars($review['review_body'])) ?></p>
+            <div class="review-action-buttons">
+              <form method="POST" style="display: inline;">
+                <button type="button" class="edit-review-btn" onclick="editReview()">Edit Review</button>
+              </form>
+              <form method="POST" onsubmit="return confirm('Are you sure you want to delete your review?');">
+                <input type="hidden" name="delete_review_id" value="<?= $review['id'] ?>">
+                <button type="submit" class="delete-review-btn">Delete Review</button>
+              </form>
+            </div>
+          </div>
+        <?php else: ?>
+          <p>You have not submitted a review for this consultation yet.</p>
+        <?php endif; ?>
+      </div>
+    </div>
   </div>
 
   <div id="meetingSection" class="consult-window-section" style="display: none;">
@@ -880,6 +1284,61 @@ li {
     })
     .catch(error => console.error("Error:", error));
   });
+
+  document.addEventListener('DOMContentLoaded', function() {
+    const stars = document.querySelectorAll('.star-rating .star');
+    const ratingInput = document.getElementById('ratingInput');
+
+    stars.forEach((star, idx) => {
+        star.addEventListener('mouseover', () => {
+            highlightStars(idx);
+        });
+
+        star.addEventListener('mouseout', () => {
+            resetStars();
+        });
+
+        star.addEventListener('click', () => {
+            setRating(idx + 1);
+        });
+    });
+
+    function highlightStars(index) {
+        stars.forEach((star, idx) => {
+            if (idx <= index) {
+                star.classList.add('hover');
+            } else {
+                star.classList.remove('hover');
+            }
+        });
+    }
+
+    function resetStars() {
+        stars.forEach(star => {
+            star.classList.remove('hover');
+        });
+    }
+
+    function setRating(rating) {
+        ratingInput.value = rating;
+        stars.forEach((star, idx) => {
+            if (idx < rating) {
+                star.classList.add('selected');
+            } else {
+                star.classList.remove('selected');
+            }
+        });
+      }
+    });
+
+    function editReview() {
+      const reviewForm = document.querySelector('.review-form-container');
+      reviewForm.classList.add('review-form-highlight');
+
+      setTimeout(() => {
+          reviewForm.classList.remove('review-form-highlight');
+      }, 1500);
+    }
 
   </script>
 
