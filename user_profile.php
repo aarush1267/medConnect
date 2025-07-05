@@ -644,7 +644,7 @@ $_SESSION['profile_pic'] = $profilePic;
     color: black;
   }
 
-  .your-reviews {
+  .no-reviews {
     margin-top: 170px;
     display: flex;
     flex-direction: column;
@@ -653,7 +653,7 @@ $_SESSION['profile_pic'] = $profilePic;
     margin-left: 50px;
   }
 
-  .your-reviews button {
+  .no-reviews button {
     border-radius: 5px;
     box-shadow: 0 1px 1px black;
     padding: 10px 10px;
@@ -665,7 +665,7 @@ $_SESSION['profile_pic'] = $profilePic;
     border: none;
   }
 
-  .your-reviews button:active {
+  .no-reviews button:active {
     box-shadow: none;
   }
 
@@ -776,6 +776,83 @@ $_SESSION['profile_pic'] = $profilePic;
        flex-direction: column;
        gap: 3em;
      }
+   }
+
+   .reviews-given-container {
+       max-width: 1000px;
+       margin: 0 auto;
+       padding: 20px;
+   }
+
+   .reviews-given-container h2 {
+       text-align: center;
+       color: #5a3e2b;
+       margin-bottom: 25px;
+   }
+
+   .reviews-list {
+       display: flex;
+       flex-direction: column;
+       gap: 20px;
+       max-height: 500px;
+       overflow-y: auto;
+       padding-right: 10px;
+   }
+
+   .review-card {
+       background: linear-gradient(135deg, #fdf6ee, #f8e8d1);
+       border-left: 6px solid #60a159;
+       border-radius: 10px;
+       padding: 15px 18px;
+       box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+       width: 500px;
+       transition: transform 0.2s ease, box-shadow 0.2s ease;
+   }
+
+   .review-card:hover {
+       transform: translateY(-4px);
+       box-shadow: 0 8px 16px rgba(0,0,0,0.08);
+   }
+
+   .review-card h3 {
+       margin: 10px 0;
+       color: #4e3c29;
+   }
+
+   .review-card p {
+       margin: 0 0 8px 0;
+       color: #5a3e2b;
+   }
+
+   .review-header {
+       display: flex;
+       justify-content: space-between;
+       align-items: center;
+   }
+
+   .star-display {
+       display: flex;
+       gap: 5px;
+       font-size: 24px;
+   }
+
+   .star-display .star {
+       color: #ccc;
+   }
+
+   .star-display .star.filled {
+       color: #f7c948;
+   }
+
+   .review-date {
+       font-size: 13px;
+       color: #7c6651;
+       font-style: italic;
+   }
+
+   .review-consultant {
+       font-size: 14px;
+       color: #5a3e2b;
    }
 
   </style>
@@ -1024,9 +1101,52 @@ $_SESSION['profile_pic'] = $profilePic;
     </div>
 
     <div style="display: none;" class="your-reviews" id="your-reviews">
-      <h2>Your reviews on consultants will show here.</h2>
-      <h3>Make a consultation to give your first review.</h3>
-      <button type="button" name="first_review_btn">Give your first review today</button>
+      <?php
+      $user_id = $_SESSION['id'];
+
+      $query = "SELECT cr.*, u.name AS consultant_name
+                FROM consultation_reviews cr
+                JOIN users u ON cr.consultant_id = u.id
+                WHERE cr.user_id = ?
+                ORDER BY cr.created_at DESC";
+
+      $stmt = $connection->prepare($query);
+      $stmt->bind_param("i", $user_id);
+      $stmt->execute();
+      $result = $stmt->get_result();
+
+      if ($result->num_rows > 0):
+      ?>
+        <div class="reviews-given-container">
+          <h2>Your Reviews</h2>
+          <div class="reviews-list">
+            <?php while ($review = $result->fetch_assoc()): ?>
+              <div class="review-card">
+                <div class="review-header">
+                  <div class="star-display">
+                    <?php
+                    $filled = intval($review['rating']);
+                    $empty = 5 - $filled;
+                    for ($i = 0; $i < $filled; $i++) echo '<span class="star filled">&#9733;</span>';
+                    for ($i = 0; $i < $empty; $i++) echo '<span class="star">&#9733;</span>';
+                    ?>
+                  </div>
+                  <span class="review-date"><?= date("F j, Y, g:i a", strtotime($review['created_at'])) ?></span>
+                </div>
+                <h3><?= htmlspecialchars($review['review_title']) ?></h3>
+                <p><?= nl2br(htmlspecialchars($review['review_body'])) ?></p>
+                <p class="review-consultant">🩺 <strong><?= htmlspecialchars($review['consultant_name']) ?></strong></p>
+              </div>
+            <?php endwhile; ?>
+          </div>
+        </div>
+      <?php else: ?>
+        <div class="no-reviews">
+          <h2>Your reviews on consultants will show here.</h2>
+          <h3>Make a consultation to give your first review.</h3>
+          <button type="button" name="first_review_btn" onclick="location.href='user_consult.php'">Give your first review today</button>
+        </div>
+      <?php endif; ?>
     </div>
 
     <div style="display: none;" class="manage-profile" id="manage-profile">
