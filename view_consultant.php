@@ -56,7 +56,7 @@ $consultant['specializations'] = implode(" • ", $formattedSpecializations);
 // Reviews & Stats
 
 // Count accepted consultations
-$consultations_stmt = $connection->prepare("SELECT COUNT(*) AS total_consults FROM consultations WHERE consultant_id = ? AND status = 'accepted'");
+$consultations_stmt = $connection->prepare("SELECT COUNT(*) AS total_consults FROM consultations WHERE consultant_id = ? AND status = 'completed'");
 $consultations_stmt->bind_param("i", $consultant_id);
 $consultations_stmt->execute();
 $consultations_result = $consultations_stmt->get_result();
