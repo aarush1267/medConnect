@@ -188,6 +188,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_review_id'])) 
     exit;
 }
 
+// Meeting System PHP
+
+// Fetch meetings for this consultation
+$meeting_stmt = $connection->prepare("SELECT meeting_link, notes, created_at FROM consultation_meetings WHERE consultation_id = ?");
+$meeting_stmt->bind_param("i", $consultation_id);
+$meeting_stmt->execute();
+$meeting_result = $meeting_stmt->get_result();
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['end_consultation'])) {
+    $consultation_id = intval($_POST['consultation_id']);
+
+    $stmt = $connection->prepare("UPDATE consultations SET status = 'completed' WHERE id = ? AND user_id = ?");
+    $stmt->bind_param("ii", $consultation_id, $_SESSION['id']);
+    $stmt->execute();
+
+    header("Location: user_consult.php"); // redirect to refresh and move to Previous Consultations
+    exit;
+}
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -930,6 +949,112 @@ li {
     border: 1px solid #614124 !important;
 }
 
+.meeting-card {
+    max-width: 650px;
+    margin: 40px auto;
+    background-color: #fdf6ee;
+    padding: 30px;
+    border-radius: 14px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    font-family: 'Lora', serif;
+}
+
+.meeting-title {
+    text-align: center;
+    color: #5a3e2b;
+    margin-bottom: 25px;
+    font-size: 24px;
+}
+
+.meeting-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.meeting-item {
+    background-color: #fffdf9;
+    border: 1px solid #d2bca9;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.05);
+    font-family: 'Lora', serif;
+    color: #5a3e2b;
+}
+
+.meeting-item p {
+    margin: 8px 0;
+    line-height: 1.4;
+}
+
+.meeting-timestamp {
+    font-size: 13px;
+    color: #7c6651;
+    margin-top: 8px;
+}
+
+.meeting-link {
+    color: #4e8a45;
+    word-break: break-all;
+}
+
+.meeting-link:hover {
+    text-decoration: underline;
+}
+
+.no-meetings {
+    text-align: center;
+    color: #7c6651;
+    margin-top: 20px;
+    font-style: italic;
+}
+
+.join-meeting-btn {
+    display: inline-block;
+    background-color: #60a159;
+    color: white;
+    padding: 10px 18px;
+    border-radius: 6px;
+    font-family: 'Lora', serif;
+    font-weight: bold;
+    font-size: 15px;
+    text-decoration: none;
+    transition: background 0.2s, transform 0.2s;
+    box-shadow: 0 1px 1px black;
+    margin-top: 10px;
+}
+
+.join-meeting-btn:hover {
+    background-color: #4e8a45;
+    transform: translateY(-2px);
+}
+
+.join-meeting-btn:active {
+    box-shadow: none;
+}
+
+.meeting-item {
+    text-align: center;
+}
+
+.end-consult-btn {
+    background-color: #d9534f;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-family: 'Lora', serif;
+    font-weight: bold;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s;
+    box-shadow: 0 1px 1px black;
+}
+
+.end-consult-btn:active {
+    box-shadow: none;
+}
+
 </style>
 <body>
   <!-- Navbar -->
@@ -1002,6 +1127,11 @@ li {
         <?php endif; ?>
       </div>
     </div>
+
+    <form method="POST" onsubmit="return confirm('Are you sure you want to end this consultation?');" style="margin-top: 30px; text-align: center;">
+      <input type="hidden" name="consultation_id" value="<?= $consultation_id ?>">
+      <button type="submit" name="end_consultation" class="end-consult-btn">End Consultation</button>
+    </form>
   </div>
 
   <div id="chatSection" class="consult-window-section" style="display: none;">
@@ -1181,7 +1311,35 @@ li {
   </div>
 
   <div id="meetingSection" class="consult-window-section" style="display: none;">
-    <!-- Meeting content goes here -->
+    <div class="meeting-card">
+        <h2 class="meeting-title">📅 Scheduled Meetings</h2>
+
+        <?php if ($meeting_result->num_rows > 0): ?>
+            <div class="meeting-list">
+                <?php while ($meeting = $meeting_result->fetch_assoc()): ?>
+                    <div class="meeting-item">
+                        <p><strong>Meeting Link:</strong>
+                            <a target="_blank" class="meeting-link">
+                                <?= htmlspecialchars($meeting['meeting_link']) ?>
+                            </a>
+                        </p>
+                        <?php if (!empty($meeting['notes'])): ?>
+                            <p><strong>Notes:</strong> <?= nl2br(htmlspecialchars($meeting['notes'])) ?></p>
+                        <?php endif; ?>
+                        <p class="meeting-timestamp"><?= date("F j, Y, g:i a", strtotime($meeting['created_at'])) ?></p>
+
+                        <?php if (!empty($meeting['meeting_link'])): ?>
+                            <a href="<?= htmlspecialchars($meeting['meeting_link']) ?>" target="_blank" class="join-meeting-btn">
+                                Join Meeting
+                            </a>
+                        <?php endif; ?>
+                    </div>
+                <?php endwhile; ?>
+            </div>
+        <?php else: ?>
+            <p class="no-meetings">No meetings have been scheduled for this consultation yet.</p>
+        <?php endif; ?>
+    </div>
   </div>
 
   <!-- Footer -->
