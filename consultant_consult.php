@@ -679,6 +679,11 @@ textarea {
     color: white;
 }
 
+.status.completed {
+    background-color: #60a159;
+    color: white;
+}
+
     </style>
 </head>
 <body>
@@ -842,7 +847,7 @@ textarea {
 <!-- Previous Consultations Section -->
 
 <div id="previousConsultationsSection">
-    <h1>Test</h1>
+    <div id="previousConsultationsList"></div>
 </div>
 
 <!-- Footer -->
@@ -904,6 +909,10 @@ textarea {
 
         if (section === 'current') {
           fetchCurrentConsultations();
+        }
+
+        if (section === 'previous') {
+          fetchPreviousConsultations();
         }
     }
 
@@ -1113,6 +1122,58 @@ textarea {
           })
           .catch(error => console.error("Error fetching consultations:", error));
   }
+
+  // Previous Consultations
+
+  function fetchPreviousConsultations() {
+    fetch("fetch_previous_consults.php")
+      .then(response => response.json())
+      .then(data => {
+          const consultationsContainer = document.getElementById("previousConsultationsList");
+          consultationsContainer.innerHTML = ""; // Clear existing entries
+
+          if (data.error) {
+              consultationsContainer.innerHTML = `<p style="color: red;">${data.error}</p>`;
+              return;
+          }
+
+          if (data.length === 0) {
+              consultationsContainer.innerHTML = `<p>No previous consultations.</p>`;
+              return;
+          }
+
+          data.forEach(consultation => {
+              const consultDiv = document.createElement("div");
+              consultDiv.classList.add("consultation-item");
+
+              let profilePic = consultation.consultant_pic || consultation.user_pic || "medconnect_images/blank_profile_pic.png"; // Default pic if null
+
+              let statusLabel = `<span class="status completed">Completed</span>`;
+
+              consultDiv.classList.add("clickable");
+              consultDiv.setAttribute("onclick", `window.location.href='consultant_window.php?consultation_id=${consultation.id}'`);
+
+              consultDiv.innerHTML = `
+                  <div class="consultation-card">
+                      <div class="consultation-left">
+                          <img src="${profilePic}" class="profile-pic" alt="Profile Picture">
+                      </div>
+                      <div class="consultation-right">
+                          <p><strong>Consultant Name:</strong> ${consultation.consultant_name || consultation.user_name}</p>
+                          <p><strong>Symptoms:</strong> ${consultation.symptoms}</p>
+                          <p><strong>Date:</strong> ${consultation.date} | <strong>Time:</strong> ${consultation.time}</p>
+                          <p><strong>Status:</strong> ${statusLabel}</p>
+                      </div>
+                  </div>
+              `;
+
+              consultationsContainer.appendChild(consultDiv);
+          });
+
+          document.getElementById("previousConsultationsSection").style.display = "block"; // Show section
+      })
+      .catch(error => console.error("Error fetching previous consultations:", error));
+    }
 
 </script>
 
